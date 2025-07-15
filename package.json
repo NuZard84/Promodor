@@ -1,0 +1,38 @@
+{
+  "name": "promodor",
+  "version": "1.0.0",
+  "main": "main.js",
+  "scripts": {
+    "start": "concurrently \"cross-env BROWSER=none npm start --prefix client\" \"wait-on http://localhost:3000 && electron .\"",
+    "build": "npm run build --prefix client && electron-builder",
+    "dev": "concurrently \"cross-env BROWSER=none npm start --prefix client\" \"wait-on http://localhost:3000 && electron .\""
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "description": "Pomodoro Timer Desktop App",
+  "dependencies": {
+    "electron": "^37.2.1",
+    "electron-is-dev": "^3.0.1",
+    "react": "^19.1.0",
+    "react-dom": "^19.1.0"
+  },
+  "devDependencies": {
+    "concurrently": "^9.2.0",
+    "cross-env": "^7.0.3",
+    "electron-builder": "^26.0.12",
+    "wait-on": "^8.0.3"
+  },
+  "build": {
+    "appId": "com.promodor.app",
+    "productName": "Promodor",
+    "files": [
+      "main.js",
+      "client/build/**/*",
+      "node_modules/**/*"
+    ],
+    "directories": {
+      "buildResources": "assets"
+    }
+  }
+}

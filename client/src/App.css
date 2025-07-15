@@ -1,0 +1,64 @@
+.App {
+  text-align: center;
+}
+
+.App-header {
+  background-color: #282c34;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  font-size: calc(10px + 2vmin);
+  color: white;
+}
+
+.timer {
+  background-color: #3a3f4b;
+  border-radius: 10px;
+  padding: 2rem;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+  margin: 2rem 0;
+  width: 80%;
+  max-width: 400px;
+}
+
+.time {
+  font-size: 3rem;
+  font-weight: bold;
+  margin-bottom: 1rem;
+}
+
+.mode {
+  font-size: 1.5rem;
+  margin-bottom: 1.5rem;
+  color: #61dafb;
+}
+
+.controls {
+  display: flex;
+  justify-content: space-around;
+}
+
+button {
+  background-color: #61dafb;
+  color: #282c34;
+  border: none;
+  border-radius: 5px;
+  padding: 0.5rem 1rem;
+  font-size: 1rem;
+  font-weight: bold;
+  cursor: pointer;
+  transition: background-color 0.3s;
+}
+
+button:hover {
+  background-color: #4fa8c7;
+}
+
+@media (max-width: 600px) {
+  .controls {
+    flex-direction: column;
+    gap: 1rem;
+  }
+}
