@@ -1,0 +1,433 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pomodoro Overlay</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: transparent;
+            overflow: hidden;
+            cursor: move;
+            -webkit-app-region: drag;
+        }
+        
+        .overlay-container {
+            width: 200px;
+            height: 170px;
+            background: rgba(0, 0, 0, 0.85);
+            backdrop-filter: blur(20px);
+            border-radius: 12px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: white;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 16px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+            transition: all 0.3s ease;
+        }
+        
+        .overlay-container.click-through {
+            pointer-events: none;
+        }
+        
+        .mode-label {
+            font-size: 10px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: #888;
+            margin-bottom: 8px;
+        }
+        
+        .timer-display {
+            font-size: 28px;
+            font-weight: bold;
+            margin-bottom: 4px;
+            font-variant-numeric: tabular-nums;
+        }
+        
+        .timer-display.focus {
+            color: #E14429;
+        }
+        
+        .timer-display.break {
+            color: #FFB875;
+        }
+        
+        .cycle-info {
+            font-size: 10px;
+            color: #666;
+            margin-bottom: 12px;
+        }
+        
+        .controls {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            -webkit-app-region: no-drag;
+        }
+        
+        .control-btn {
+            width: 32px;
+            height: 32px;
+            border: none;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s ease;
+            backdrop-filter: blur(10px);
+        }
+        
+        .control-btn:hover {
+            background: rgba(255, 255, 255, 0.2);
+            transform: scale(1.05);
+        }
+        
+        .control-btn.play {
+            background: #2ecc71;
+        }
+        
+        .control-btn.pause {
+            background: #e74c3c;
+        }
+        
+        .control-btn.reset {
+            background: rgba(255, 255, 255, 0.1);
+        }
+        
+        .top-controls {
+            position: absolute;
+            top: 8px;
+            right: 8px;
+            display: flex;
+            gap: 4px;
+            -webkit-app-region: no-drag;
+        }
+        
+        .top-btn {
+            width: 20px;
+            height: 20px;
+            border: none;
+            border-radius: 4px;
+            background: rgba(255, 255, 255, 0.1);
+            color: #888;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            transition: all 0.2s ease;
+        }
+        
+        .top-btn:hover {
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+        }
+        
+        .top-btn.active {
+            color: #3498db;
+        }
+        
+        .shortcut-hint {
+            position: absolute;
+            bottom: 4px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 8px;
+            color: #444;
+            text-align: center;
+            line-height: 1.2;
+        }
+        
+        /* SVG Icons */
+        .icon {
+            width: 14px;
+            height: 14px;
+            fill: currentColor;
+        }
+        
+        .icon-small {
+            width: 10px;
+            height: 10px;
+            fill: currentColor;
+        }
+    </style>
+</head>
+<body>
+    <div id="overlay" class="overlay-container">
+        <!-- Top controls -->
+        <div class="top-controls">
+            <button id="clickThroughBtn" class="top-btn" title="Toggle click-through">
+                <svg class="icon-small" viewBox="0 0 24 24">
+                    <path d="M13 9h-2V7h2m0 10h-2v-6h2m-1-9A10 10 0 0 0 2 12a10 10 0 0 0 10 10 10 10 0 0 0 10-10A10 10 0 0 0 12 2Z"/>
+                </svg>
+            </button>
+            <button id="closeBtn" class="top-btn" title="Close overlay">
+                <svg class="icon-small" viewBox="0 0 24 24">
+                    <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/>
+                </svg>
+            </button>
+        </div>
+        
+        <!-- Mode label -->
+        <div id="modeLabel" class="mode-label">FOCUS TIME</div>
+        
+        <!-- Timer display -->
+        <div id="timerDisplay" class="timer-display focus">25:00</div>
+        
+        <!-- Cycle info -->
+        <div id="cycleInfo" class="cycle-info">Cycle 1 / 4</div>
+        
+        <!-- Controls -->
+        <div class="controls">
+            <button id="resetBtn" class="control-btn reset" title="Reset">
+                <svg class="icon" viewBox="0 0 24 24">
+                    <path d="M12 4V1L8 5l4 4V6c3.31 0 6 2.69 6 6 0 1.01-.25 1.97-.7 2.8l1.46 1.46C19.54 15.03 20 13.57 20 12c0-4.42-3.58-8-8-8zm0 14c-3.31 0-6-2.69-6-6 0-1.01.25-1.97.7-2.8L5.24 7.74C4.46 8.97 4 10.43 4 12c0 4.42 3.58 8 8 8v3l4-4-4-4v3z"/>
+                </svg>
+            </button>
+            
+            <button id="playPauseBtn" class="control-btn play" title="Start">
+                <svg id="playIcon" class="icon" viewBox="0 0 24 24">
+                    <path d="M8 5v14l11-7z"/>
+                </svg>
+                <svg id="pauseIcon" class="icon" viewBox="0 0 24 24" style="display: none;">
+                    <path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/>
+                </svg>
+            </button>
+        </div>
+        
+        <!-- Keyboard shortcut hint -->
+        <div class="shortcut-hint">
+            Ctrl+Alt+C: Click-through<br>
+            Ctrl+Shift+P: Play/Pause
+        </div>
+    </div>
+
+    <script>
+        // Timer state
+        let minutes = 25;
+        let seconds = 0;
+        let isActive = false;
+        let mode = 'focus';
+        let cycle = 1;
+        let totalCycles = 4;
+        let isClickThrough = false;
+        let timerInterval = null;
+        
+        // Elements
+        const overlay = document.getElementById('overlay');
+        const modeLabel = document.getElementById('modeLabel');
+        const timerDisplay = document.getElementById('timerDisplay');
+        const cycleInfo = document.getElementById('cycleInfo');
+        const playPauseBtn = document.getElementById('playPauseBtn');
+        const resetBtn = document.getElementById('resetBtn');
+        const clickThroughBtn = document.getElementById('clickThroughBtn');
+        const closeBtn = document.getElementById('closeBtn');
+        const playIcon = document.getElementById('playIcon');
+        const pauseIcon = document.getElementById('pauseIcon');
+        
+        // Settings
+        const settings = {
+            focusTime: 25,
+            shortBreakTime: 5,
+            longBreakTime: 15,
+            longBreakAfter: 4
+        };
+        
+        // Mode configurations
+        const modeConfig = {
+            focus: { label: 'FOCUS TIME', color: '#E14429', className: 'focus' },
+            shortBreak: { label: 'SHORT BREAK', color: '#FFB875', className: 'break' },
+            longBreak: { label: 'LONG BREAK', color: '#FFB875', className: 'break' }
+        };
+        
+        // Update display
+        function updateDisplay() {
+            const config = modeConfig[mode];
+            modeLabel.textContent = config.label;
+            timerDisplay.textContent = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+            timerDisplay.className = `timer-display ${config.className}`;
+            cycleInfo.textContent = `Cycle ${cycle} / ${totalCycles}`;
+            
+            // Update play/pause button
+            if (isActive) {
+                playPauseBtn.className = 'control-btn pause';
+                playPauseBtn.title = 'Pause';
+                playIcon.style.display = 'none';
+                pauseIcon.style.display = 'block';
+            } else {
+                playPauseBtn.className = 'control-btn play';
+                playPauseBtn.title = 'Start';
+                playIcon.style.display = 'block';
+                pauseIcon.style.display = 'none';
+            }
+        }
+        
+        // Timer logic
+        function tick() {
+            if (seconds === 0) {
+                if (minutes === 0) {
+                    handleTimerComplete();
+                    return;
+                } else {
+                    minutes--;
+                    seconds = 59;
+                }
+            } else {
+                seconds--;
+            }
+            updateDisplay();
+        }
+        
+        function handleTimerComplete() {
+            isActive = false;
+            clearInterval(timerInterval);
+            
+            if (mode === 'focus') {
+                if (cycle % settings.longBreakAfter === 0) {
+                    mode = 'longBreak';
+                    minutes = settings.longBreakTime;
+                } else {
+                    mode = 'shortBreak';
+                    minutes = settings.shortBreakTime;
+                }
+            } else {
+                mode = 'focus';
+                minutes = settings.focusTime;
+                if (mode === 'longBreak') {
+                    cycle = 1;
+                } else {
+                    cycle++;
+                }
+            }
+            
+            seconds = 0;
+            updateDisplay();
+            
+            // Show notification
+            if (window.electronAPI) {
+                window.electronAPI.showNotification({
+                    title: 'Pomodoro Timer',
+                    body: mode === 'focus' ? 'Time to focus!' : 'Time for a break!'
+                });
+            }
+        }
+        
+        // Timer controls
+        function toggleTimer() {
+            isActive = !isActive;
+            
+            if (isActive) {
+                timerInterval = setInterval(tick, 1000);
+            } else {
+                clearInterval(timerInterval);
+            }
+            
+            updateDisplay();
+        }
+        
+        function resetTimer() {
+            isActive = false;
+            clearInterval(timerInterval);
+            
+            if (mode === 'focus') {
+                minutes = settings.focusTime;
+            } else if (mode === 'shortBreak') {
+                minutes = settings.shortBreakTime;
+            } else {
+                minutes = settings.longBreakTime;
+            }
+            
+            seconds = 0;
+            updateDisplay();
+        }
+        
+        // Click-through toggle
+        function toggleClickThrough() {
+            isClickThrough = !isClickThrough;
+            
+            if (isClickThrough) {
+                overlay.classList.add('click-through');
+                clickThroughBtn.classList.add('active');
+                clickThroughBtn.title = 'Disable click-through';
+            } else {
+                overlay.classList.remove('click-through');
+                clickThroughBtn.classList.remove('active');
+                clickThroughBtn.title = 'Enable click-through';
+            }
+            
+            if (window.electronAPI) {
+                window.electronAPI.toggleClickThrough(isClickThrough);
+            }
+        }
+        
+        // Close overlay
+        function closeOverlay() {
+            if (window.electronAPI) {
+                window.electronAPI.closeOverlay();
+            } else {
+                window.close();
+            }
+        }
+        
+        // Event listeners
+        playPauseBtn.addEventListener('click', toggleTimer);
+        resetBtn.addEventListener('click', resetTimer);
+        clickThroughBtn.addEventListener('click', toggleClickThrough);
+        closeBtn.addEventListener('click', closeOverlay);
+        
+        // Global shortcut function for Electron
+        window.toggleClickThroughFromShortcut = () => {
+            toggleClickThrough();
+            return true;
+        };
+        
+        // Keyboard shortcuts
+        document.addEventListener('keydown', (e) => {
+            if (e.ctrlKey && e.shiftKey && e.code === 'KeyP') {
+                e.preventDefault();
+                toggleTimer();
+            } else if (e.ctrlKey && e.altKey && e.code === 'KeyC') {
+                e.preventDefault();
+                toggleClickThrough();
+            }
+        });
+        
+        // Listen for click-through changes from Electron
+        window.addEventListener('click-through-changed', (e) => {
+            isClickThrough = e.detail;
+            if (isClickThrough) {
+                overlay.classList.add('click-through');
+                clickThroughBtn.classList.add('active');
+            } else {
+                overlay.classList.remove('click-through');
+                clickThroughBtn.classList.remove('active');
+            }
+        });
+        
+        // Initial display update
+        updateDisplay();
+        
+        // Sync with main window if electronAPI is available
+        if (window.electronAPI) {
+            // Listen for timer state updates from main window
+            window.electronAPI.onShortcut('toggle-timer', toggleTimer);
+            window.electronAPI.onShortcut('reset-timer', resetTimer);
+        }
+    </script>
+</body>
+</html>

@@ -1,38 +1,79 @@
 {
-  "name": "promodor",
+  "name": "pomodoro-timer-pro",
   "version": "1.0.0",
+  "description": "A premium Pomodoro timer desktop application with overlay mode and advanced features",
   "main": "main.js",
+  "homepage": "./",
   "scripts": {
-    "start": "concurrently \"cross-env BROWSER=none npm start --prefix client\" \"wait-on http://localhost:3000 && electron .\"",
-    "build": "npm run build --prefix client && electron-builder",
-    "dev": "concurrently \"cross-env BROWSER=none npm start --prefix client\" \"wait-on http://localhost:3000 && electron .\""
+    "start": "electron .",
+    "dev": "concurrently \"npm run client\" \"wait-on http://localhost:3000 && electron .\"",
+    "client": "cd client && npm start",
+    "build": "cd client && npm run build",
+    "dist": "npm run build && electron-builder",
+    "dist-mac": "npm run build && electron-builder --mac",
+    "dist-win": "npm run build && electron-builder --win",
+    "dist-linux": "npm run build && electron-builder --linux",
+    "pack": "npm run build && electron-builder --dir",
+    "postinstall": "cd client && npm install"
   },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
-  "description": "Pomodoro Timer Desktop App",
-  "dependencies": {
-    "electron": "^37.2.1",
-    "electron-is-dev": "^3.0.1",
-    "react": "^19.1.0",
-    "react-dom": "^19.1.0"
-  },
+  "keywords": [
+    "pomodoro",
+    "timer",
+    "productivity",
+    "desktop",
+    "electron"
+  ],
+  "author": "Your Name",
+  "license": "MIT",
   "devDependencies": {
-    "concurrently": "^9.2.0",
-    "cross-env": "^7.0.3",
-    "electron-builder": "^26.0.12",
-    "wait-on": "^8.0.3"
+    "concurrently": "^7.6.0",
+    "electron": "^22.0.0",
+    "electron-builder": "^24.0.0",
+    "wait-on": "^7.0.1"
+  },
+  "dependencies": {
+    "electron-is-dev": "^2.0.0",
+    "electron-updater": "^5.3.0"
   },
   "build": {
-    "appId": "com.promodor.app",
-    "productName": "Promodor",
+    "appId": "com.yourcompany.pomodoro-timer-pro",
+    "productName": "Pomodoro Timer Pro",
+    "directories": {
+      "output": "dist"
+    },
     "files": [
       "main.js",
       "client/build/**/*",
+      "assets/**/*",
       "node_modules/**/*"
     ],
-    "directories": {
-      "buildResources": "assets"
+    "mac": {
+      "category": "public.app-category.productivity",
+      "icon": "assets/icon.icns",
+      "hardenedRuntime": true,
+      "gatekeeperAssess": false,
+      "entitlements": "assets/entitlements.mac.plist",
+      "entitlementsInherit": "assets/entitlements.mac.plist"
+    },
+    "win": {
+      "target": "nsis",
+      "icon": "assets/icon.ico"
+    },
+    "linux": {
+      "target": "AppImage",
+      "icon": "assets/icon.png",
+      "category": "Office"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true
+    },
+    "publish": {
+      "provider": "github",
+      "owner": "your-github-username",
+      "repo": "pomodoro-timer-pro"
     }
   }
 }
