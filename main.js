@@ -60,7 +60,7 @@ function createOverlayWindow() {
 
   overlayWindow = new BrowserWindow({
     width: 280,
-    height: 320,
+    height: 400,
     frame: false,
     transparent: true,
     alwaysOnTop: true,
@@ -68,46 +68,29 @@ function createOverlayWindow() {
     resizable: false,
     movable: true,
     webPreferences: {
-      nodeIntegration: true,
+      nodeIntegration: false,
       contextIsolation: true,
       enableRemoteModule: false,
       preload: path.join(__dirname, 'preload.js'),
     },
     show: false,
-    hasShadow: false,
-    vibrancy: 'dark', // macOS only
-    visualEffectState: 'active', // macOS only
+    hasShadow: true,
+    vibrancy: 'under-window',
+    visualEffectState: 'active',
   });
 
-  // Load the same React app but it will detect overlay mode
   overlayWindow.loadURL(
     isDev
       ? 'http://localhost:3000#overlay'
-      : `file://${path.join(__dirname, './client/build/index.html')}#overlay`
+      : `file://${path.join(__dirname, './client/build/index.html#overlay')}`
   );
-
-  // Position overlay window at top-right corner
-  const { screen } = require('electron');
-  const primaryDisplay = screen.getPrimaryDisplay();
-  const { width, height } = primaryDisplay.workAreaSize;
-  overlayWindow.setPosition(width - 300, 20);
 
   overlayWindow.once('ready-to-show', () => {
     overlayWindow.show();
-    overlayWindow.setAlwaysOnTop(true, 'floating');
   });
 
   overlayWindow.on('closed', () => {
     overlayWindow = null;
-    // Notify main window that overlay was closed
-    if (mainWindow) {
-      mainWindow.webContents.send('overlay-closed');
-    }
-  });
-
-  // Make window draggable
-  overlayWindow.on('will-move', (event, newBounds) => {
-    // Allow dragging
   });
 }
 
@@ -322,6 +305,17 @@ function registerGlobalShortcuts() {
     }
   });
 
+  // Add global shortcut for click-through toggle
+  globalShortcut.register('CmdOrCtrl+Shift+C', () => {
+    if (overlayWindow) {
+      overlayWindow.webContents.executeJavaScript(`
+        if (window.toggleClickThroughFromShortcut) {
+          window.toggleClickThroughFromShortcut();
+        }
+      `);
+    }
+  });
+
   globalShortcut.register('CmdOrCtrl+Shift+H', () => {
     if (overlayWindow) {
       overlayWindow.hide();
@@ -348,7 +342,9 @@ function registerGlobalShortcuts() {
 
   // Focus mode toggle
   globalShortcut.register('CmdOrCtrl+Alt+F', () => {
-    toggleFocusMode();
+    if (mainWindow) {
+      toggleFocusMode();
+    }
   });
 }
 
@@ -384,9 +380,9 @@ ipcMain.handle('show-notification', (event, options) => {
       icon: path.join(__dirname, 'assets/icon.png'),
       sound: true,
     });
-    
+
     notification.show();
-    
+
     notification.on('click', () => {
       if (mainWindow) {
         mainWindow.focus();
@@ -411,15 +407,25 @@ ipcMain.handle('minimize-to-tray', () => {
   }
 });
 
+// Add new IPC handler for opening main window
+ipcMain.handle('open-main-window', () => {
+  if (!mainWindow) {
+    createWindow();
+  } else {
+    mainWindow.show();
+    mainWindow.focus();
+  }
+});
+
 // App event handlers
 app.whenReady().then(() => {
-  createWindow();
+  createOverlayWindow(); // Start with overlay instead of main window
   registerGlobalShortcuts();
-  
+
   // Handle app activation (macOS)
   app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) {
-      createWindow();
+      createOverlayWindow();
     }
   });
 });
@@ -454,15 +460,15 @@ app.on('web-contents-created', (event, contents) => {
 // Auto-updater (for production)
 if (!isDev) {
   const { autoUpdater } = require('electron-updater');
-  
+
   autoUpdater.checkForUpdatesAndNotify();
-  
+
   autoUpdater.on('update-available', () => {
     if (mainWindow) {
       mainWindow.webContents.send('update-available');
     }
   });
-  
+
   autoUpdater.on('update-downloaded', () => {
     if (mainWindow) {
       mainWindow.webContents.send('update-downloaded');

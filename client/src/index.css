@@ -1,3 +1,35 @@
+/* Add overlay-specific styles */
+body[data-overlay="true"] {
+  margin: 0;
+  padding: 0;
+  background: transparent !important;
+  overflow: hidden;
+  -webkit-app-region: drag;
+}
+
+.overlay-container {
+  -webkit-app-region: drag;
+  user-select: none;
+}
+
+.overlay-container button {
+  -webkit-app-region: no-drag;
+}
+
+/* Electron dragging regions */
+.electron-drag {
+  -webkit-app-region: drag;
+}
+
+.electron-no-drag {
+  -webkit-app-region: no-drag;
+}
+
+/* Ensure buttons are clickable */
+button {
+  -webkit-app-region: no-drag;
+}
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
