@@ -18,20 +18,20 @@ function createWindow() {
         darwin: {
             vibrancy: 'under-window',
             visualEffectState: 'active',
-            titleBarStyle: 'hiddenInset'
+            titleBarStyle: 'hiddenInset',
         },
         win32: {
             visualEffectState: 'active',
-            titleBarStyle: 'hidden'
+            titleBarStyle: 'hidden',
         },
         linux: {
             visualEffectState: 'active',
-            titleBarStyle: 'hidden'
-        }
-    };
+            titleBarStyle: 'hidden',
+        },
+    }
 
-    const currentPlatform = process.platform;
-    const platformSettings = platformConfig[currentPlatform] || {};
+    const currentPlatform = process.platform
+    const platformSettings = platformConfig[currentPlatform] || {}
 
     // Create the main browser window
     mainWindow = new BrowserWindow({
@@ -39,7 +39,7 @@ function createWindow() {
         height: 800,
         minWidth: 800,
         minHeight: 600,
-        frame: false,
+
         transparent: true,
         backgroundColor: '#00000000',
         webPreferences: {
@@ -49,7 +49,7 @@ function createWindow() {
             preload: path.join(__dirname, 'preload.js'),
             // Enable hardware acceleration for better performance
             enableWebGL: true,
-            experimentalFeatures: true
+            experimentalFeatures: true,
         },
         show: false,
         icon: path.join(__dirname, 'assets/icon.png'),
@@ -57,7 +57,6 @@ function createWindow() {
         ...platformSettings,
         // Additional settings for better transparency
         hasShadow: false,
-        thickFrame: false
     })
 
     // Load the index.html from React app
@@ -78,7 +77,10 @@ function createWindow() {
             transparent: mainWindow.isVisible(),
             backgroundColor: mainWindow.getBackgroundColor(),
             platform: process.platform,
-            vibrancy: process.platform === 'darwin' ? 'under-window' : 'not supported'
+            vibrancy:
+                process.platform === 'darwin'
+                    ? 'under-window'
+                    : 'not supported',
         })
     })
 
@@ -106,18 +108,18 @@ function createOverlayWindow() {
     const platformConfig = {
         darwin: {
             vibrancy: 'under-window',
-            visualEffectState: 'active'
+            visualEffectState: 'active',
         },
         win32: {
-            visualEffectState: 'active'
+            visualEffectState: 'active',
         },
         linux: {
-            visualEffectState: 'active'
-        }
-    };
+            visualEffectState: 'active',
+        },
+    }
 
-    const currentPlatform = process.platform;
-    const platformSettings = platformConfig[currentPlatform] || {};
+    const currentPlatform = process.platform
+    const platformSettings = platformConfig[currentPlatform] || {}
 
     overlayWindow = new BrowserWindow({
         width: 280,
@@ -136,22 +138,22 @@ function createOverlayWindow() {
             preload: path.join(__dirname, 'preload.js'),
             // Enable hardware acceleration for better performance
             enableWebGL: true,
-            experimentalFeatures: true
+            experimentalFeatures: true,
         },
         // Platform-specific settings
         ...platformSettings,
         // Additional settings for better transparency
         hasShadow: false,
-        thickFrame: false
+        thickFrame: false,
     })
 
     overlayWindow.loadURL(
         isDev
             ? 'http://localhost:3000#overlay'
             : `file://${path.join(
-                __dirname,
-                './client/build/index.html#overlay'
-            )}`
+                  __dirname,
+                  './client/build/index.html#overlay'
+              )}`
     )
 
     overlayWindow.once('ready-to-show', () => {
@@ -164,7 +166,10 @@ function createOverlayWindow() {
             transparent: overlayWindow.isVisible(),
             backgroundColor: overlayWindow.getBackgroundColor(),
             platform: process.platform,
-            vibrancy: process.platform === 'darwin' ? 'under-window' : 'not supported'
+            vibrancy:
+                process.platform === 'darwin'
+                    ? 'under-window'
+                    : 'not supported',
         })
     })
 
@@ -184,18 +189,18 @@ function createNotesOverlayWindow() {
     const platformConfig = {
         darwin: {
             vibrancy: 'under-window',
-            visualEffectState: 'active'
+            visualEffectState: 'active',
         },
         win32: {
-            visualEffectState: 'active'
+            visualEffectState: 'active',
         },
         linux: {
-            visualEffectState: 'active'
-        }
-    };
+            visualEffectState: 'active',
+        },
+    }
 
-    const currentPlatform = process.platform;
-    const platformSettings = platformConfig[currentPlatform] || {};
+    const currentPlatform = process.platform
+    const platformSettings = platformConfig[currentPlatform] || {}
 
     notesOverlayWindow = new BrowserWindow({
         width: 320,
@@ -213,7 +218,7 @@ function createNotesOverlayWindow() {
             enableRemoteModule: false,
             preload: path.join(__dirname, 'preload.js'),
             enableWebGL: true,
-            experimentalFeatures: true
+            experimentalFeatures: true,
         },
         ...platformSettings,
         hasShadow: false,
@@ -221,13 +226,16 @@ function createNotesOverlayWindow() {
         minWidth: 280,
         minHeight: 300,
         maxWidth: 500,
-        maxHeight: 600
+        maxHeight: 600,
     })
 
     notesOverlayWindow.loadURL(
         isDev
             ? 'http://localhost:3000#notes-overlay'
-            : `file://${path.join(__dirname, './client/build/index.html#notes-overlay')}`
+            : `file://${path.join(
+                  __dirname,
+                  './client/build/index.html#notes-overlay'
+              )}`
     )
 
     notesOverlayWindow.once('ready-to-show', () => {
@@ -237,7 +245,7 @@ function createNotesOverlayWindow() {
         console.log('Notes overlay window created with settings:', {
             transparent: notesOverlayWindow.isVisible(),
             backgroundColor: notesOverlayWindow.getBackgroundColor(),
-            platform: process.platform
+            platform: process.platform,
         })
     })
 
@@ -604,16 +612,19 @@ ipcMain.handle('close-notes-overlay', () => {
 // App event handlers
 app.whenReady().then(() => {
     // Enable hardware acceleration for better performance
-    app.commandLine.appendSwitch('enable-hardware-acceleration');
-    app.commandLine.appendSwitch('enable-features', 'VaapiVideoDecoder');
-    app.commandLine.appendSwitch('ignore-gpu-blacklist');
-    app.commandLine.appendSwitch('enable-gpu-rasterization');
-    app.commandLine.appendSwitch('enable-zero-copy');
+    app.commandLine.appendSwitch('enable-hardware-acceleration')
+    app.commandLine.appendSwitch('enable-features', 'VaapiVideoDecoder')
+    app.commandLine.appendSwitch('ignore-gpu-blacklist')
+    app.commandLine.appendSwitch('enable-gpu-rasterization')
+    app.commandLine.appendSwitch('enable-zero-copy')
 
     // Debug: Check hardware acceleration
-    console.log('Hardware acceleration enabled:', app.commandLine.hasSwitch('enable-hardware-acceleration'));
-    console.log('Platform:', process.platform);
-    console.log('Electron version:', process.versions.electron);
+    console.log(
+        'Hardware acceleration enabled:',
+        app.commandLine.hasSwitch('enable-hardware-acceleration')
+    )
+    console.log('Platform:', process.platform)
+    console.log('Electron version:', process.versions.electron)
 
     createOverlayWindow() // Start with overlay instead of main window
     registerGlobalShortcuts()
