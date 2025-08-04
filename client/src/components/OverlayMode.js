@@ -1,5 +1,13 @@
 import React, { useState, useEffect, useCallback } from 'react'
-import { Play, Pause, RotateCcw, Settings, X, Eye } from 'lucide-react'
+import {
+    Play,
+    Pause,
+    RotateCcw,
+    Settings,
+    X,
+    Eye,
+    NotepadTextIcon,
+} from 'lucide-react'
 import ModeSelector from './ModeSelector/ModeSelector'
 
 const OverlayMode = () => {
@@ -92,6 +100,14 @@ const OverlayMode = () => {
         )}`
     }
 
+    const [isNotesOpened, setNotesOpened] = useState(false)
+
+    const toggleNotesOverlay = () => {
+        if (window.electronAPI && !isNotesOpened) {
+            setNotesOpened(true)
+            window.electronAPI.createNotesOverlay()
+        }
+    }
     // Get mode info
     const getModeInfo = () => {
         switch (mode) {
@@ -241,7 +257,7 @@ const OverlayMode = () => {
                             strokeWidth="10"
                             fill="none"
                         />
-                        {/* Progress circle */}
+
                         <circle
                             cx="90"
                             cy="90"
@@ -251,7 +267,11 @@ const OverlayMode = () => {
                             fill="none"
                             strokeLinecap="round"
                             strokeDasharray={circumference}
-                            strokeDashoffset={strokeDashoffset}
+                            // Ensure at least 1% progress is shown visually
+                            strokeDashoffset={
+                                circumference -
+                                (Math.max(progress, 1) / 100) * circumference
+                            }
                             style={{
                                 transition:
                                     'stroke-dashoffset 0.5s ease-in-out',
@@ -311,7 +331,7 @@ const OverlayMode = () => {
             />
             {/* Bottom Control Buttons */}
             <div
-                className=" flex gap-1 justify-center space-x-6"
+                className=" flex  justify-center gap-2"
                 style={{
                     WebkitAppRegion: 'no-drag',
                     pointerEvents: isClickThrough ? 'none' : 'auto',
@@ -358,6 +378,16 @@ const OverlayMode = () => {
                     }}
                 >
                     <Settings size={16} />
+                </button>
+                <button
+                    onClick={toggleNotesOverlay}
+                    className="w-8 h-8 rounded-full bg-white bg-opacity-10 hover:bg-opacity-20 text-white text-opacity-60 hover:text-opacity-100 transition-all flex items-center justify-center"
+                    style={{
+                        backdropFilter: 'blur(10px)',
+                        border: '1px solid rgba(255, 255, 255, 0.1)',
+                    }}
+                >
+                    <NotepadTextIcon size={12} />
                 </button>
             </div>
 
