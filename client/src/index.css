@@ -1,33 +1,119 @@
 /* Add overlay-specific styles */
-body[data-overlay="true"] {
-  margin: 0;
-  padding: 0;
-  background: transparent !important;
-  overflow: hidden;
-  -webkit-app-region: drag;
+@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:ital,wght@0,100..800;1,100..800&display=swap');
+
+.jetbrains-mono-100 {
+    font-family: 'JetBrains Mono', monospace;
+    font-optical-sizing: auto;
+    font-weight: 100;
+    font-style: normal;
+}
+.jetbrains-mono-200 {
+    font-family: 'JetBrains Mono', monospace;
+    font-optical-sizing: auto;
+    font-weight: 200;
+    font-style: normal;
+}
+.jetbrains-mono-300 {
+    font-family: 'JetBrains Mono', monospace;
+    font-optical-sizing: auto;
+    font-weight: 300;
+    font-style: normal;
+}
+.jetbrains-mono-400 {
+    font-family: 'JetBrains Mono', monospace;
+    font-optical-sizing: auto;
+    font-weight: 400;
+    font-style: normal;
+}
+.jetbrains-mono-500 {
+    font-family: 'JetBrains Mono', monospace;
+    font-optical-sizing: auto;
+    font-weight: 500;
+    font-style: normal;
+}
+.jetbrains-mono-600 {
+    font-family: 'JetBrains Mono', monospace;
+    font-optical-sizing: auto;
+    font-weight: 600;
+    font-style: normal;
+}
+.jetbrains-mono-700 {
+    font-family: 'JetBrains Mono', monospace;
+    font-optical-sizing: auto;
+    font-weight: 700;
+    font-style: normal;
+}
+.jetbrains-mono-800 {
+    font-family: 'JetBrains Mono', monospace;
+    font-optical-sizing: auto;
+    font-weight: 800;
+    font-style: normal;
+}
+
+body {
+    margin: 0;
+    padding: 0;
+}
+
+body[data-overlay='true'] {
+    background: transparent !important;
+    overflow: hidden;
+    font-family: 'JetBrains Mono', monospace;
 }
 
 .overlay-container {
-  -webkit-app-region: drag;
-  user-select: none;
+    /* Enhanced backdrop blur with proper fallbacks */
+    background: rgba(0, 0, 0, 0.5);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    /* Fallback for browsers that don't support backdrop-filter */
+    background: rgba(0, 0, 0, 0.8);
+    -webkit-app-region: drag;
+    user-select: none;
 }
 
-.overlay-container button {
-  -webkit-app-region: no-drag;
+/* Ensure backdrop blur works in Electron */
+@supports (backdrop-filter: blur(20px)) {
+    .overlay-container {
+        background: rgba(0, 0, 0, 0.3);
+        backdrop-filter: blur(20px);
+        -webkit-backdrop-filter: blur(20px);
+    }
 }
 
 /* Electron dragging regions */
 .electron-drag {
-  -webkit-app-region: drag;
+    -webkit-app-region: drag;
 }
 
 .electron-no-drag {
-  -webkit-app-region: no-drag;
+    -webkit-app-region: no-drag;
 }
 
 /* Ensure buttons are clickable */
 button {
-  -webkit-app-region: no-drag;
+    -webkit-app-region: no-drag;
+}
+
+/* Enhanced backdrop blur for main app */
+.backdrop-blur-xl {
+    backdrop-filter: blur(24px);
+    -webkit-backdrop-filter: blur(24px);
+}
+
+.backdrop-blur-lg {
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+}
+
+.backdrop-blur-md {
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+}
+
+.backdrop-blur-sm {
+    backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px);
 }
 
 @tailwind base;
@@ -35,15 +121,15 @@ button {
 @tailwind utilities;
 
 body {
-  margin: 0;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
-    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
-    sans-serif;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
+    margin: 0;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto',
+        'Oxygen', 'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans',
+        'Helvetica Neue', sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
 }
 
 code {
-  font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
-    monospace;
+    font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
+        monospace;
 }

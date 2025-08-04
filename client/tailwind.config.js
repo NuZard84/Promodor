@@ -2,7 +2,6 @@
 module.exports = {
     content: [
       "./src/**/*.{js,jsx,ts,tsx}",
-      "./public/index.html",
     ],
     theme: {
       extend: {
@@ -111,7 +110,6 @@ module.exports = {
           lg: '12px',
           xl: '16px',
           '2xl': '24px',
-          '3xl': '40px',
         },
         transitionDuration: {
           '0': '0ms',

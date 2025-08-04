@@ -183,6 +183,26 @@ const App = () => {
       modeInfo={modeInfo}
     />;
   }
+      
+  // Backdrop blur test component
+  const BackdropBlurTest = () => (
+    <div className="fixed top-4 right-4 z-50">
+      <div 
+        className="p-4 rounded-lg border"
+        style={{
+          background: 'rgba(0, 0, 0, 0.3)',
+          backdropFilter: 'blur(20px)',
+          WebkitBackdropFilter: 'blur(20px)',
+          borderColor: 'rgba(255, 255, 255, 0.2)',
+          color: 'white'
+        }}
+      >
+        <p className="text-sm">Backdrop Blur Test</p>
+        <p className="text-xs opacity-70">If you see blur behind this, it's working!</p>
+      </div>
+    </div>
+  );
+
   const totalTime = mode === 'focus' ? settings.focusTime : mode === 'shortBreak' ? settings.shortBreakTime : settings.longBreakTime;
   const progress = ((totalTime * 60 - (minutes * 60 + seconds)) / (totalTime * 60)) * 100;
 
@@ -196,6 +216,9 @@ const App = () => {
         `
       }}
     >
+      {/* Backdrop Blur Test */}
+      <BackdropBlurTest />
+      
       {/* Header */}
       <div
         className="flex justify-between items-center p-6 backdrop-blur-xl border-b"
