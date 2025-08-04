@@ -7,7 +7,7 @@ import reportWebVitals from './reportWebVitals';
 const root = ReactDOM.createRoot(document.getElementById('root'));
 
 // Add overlay-specific styles if in overlay mode
-if (window.location.hash === '#overlay') {
+if (window.location.hash === '#overlay' || window.location.hash === '#notes-overlay') {
   document.body.style.margin = '0';
   document.body.style.padding = '0';
   document.body.style.background = 'transparent';

@@ -13,6 +13,10 @@ contextBridge.exposeInMainWorld('electronAPI', {
   toggleTimer: () => ipcRenderer.send('toggle-timer'),
   resetTimer: () => ipcRenderer.send('reset-timer'),
 
+  // Notes overlay controls
+  createNotesOverlay: () => ipcRenderer.invoke('create-notes-overlay'),
+  closeNotesOverlay: () => ipcRenderer.invoke('close-notes-overlay'),
+
   // Notifications
   showNotification: (options) => ipcRenderer.invoke('show-notification', options),
 

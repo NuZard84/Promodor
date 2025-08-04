@@ -10,6 +10,7 @@ const path = require('path')
 const isDev = require('electron-is-dev')
 let mainWindow
 let overlayWindow
+let notesOverlayWindow
 
 function createWindow() {
     // Platform-specific configurations
@@ -71,7 +72,7 @@ function createWindow() {
         mainWindow.show()
         // Ensure transparency is properly set after window is shown
         mainWindow.setBackgroundColor('#00000000')
-        
+
         // Debug: Log window settings
         console.log('Main window created with settings:', {
             transparent: mainWindow.isVisible(),
@@ -89,6 +90,9 @@ function createWindow() {
     mainWindow.on('closed', () => {
         if (overlayWindow) {
             overlayWindow.close()
+        }
+        if (notesOverlayWindow) {
+            notesOverlayWindow.close()
         }
         mainWindow = null
     })
@@ -145,16 +149,16 @@ function createOverlayWindow() {
         isDev
             ? 'http://localhost:3000#overlay'
             : `file://${path.join(
-                  __dirname,
-                  './client/build/index.html#overlay'
-              )}`
+                __dirname,
+                './client/build/index.html#overlay'
+            )}`
     )
 
     overlayWindow.once('ready-to-show', () => {
         overlayWindow.show()
         // Ensure transparency is properly set after window is shown
         overlayWindow.setBackgroundColor('#00000000')
-        
+
         // Debug: Log overlay window settings
         console.log('Overlay window created with settings:', {
             transparent: overlayWindow.isVisible(),
@@ -173,6 +177,79 @@ function closeOverlayWindow() {
     if (overlayWindow) {
         overlayWindow.close()
         overlayWindow = null
+    }
+}
+
+function createNotesOverlayWindow() {
+    const platformConfig = {
+        darwin: {
+            vibrancy: 'under-window',
+            visualEffectState: 'active'
+        },
+        win32: {
+            visualEffectState: 'active'
+        },
+        linux: {
+            visualEffectState: 'active'
+        }
+    };
+
+    const currentPlatform = process.platform;
+    const platformSettings = platformConfig[currentPlatform] || {};
+
+    notesOverlayWindow = new BrowserWindow({
+        width: 320,
+        height: 400,
+        alwaysOnTop: true,
+        skipTaskbar: true,
+        resizable: true,
+        movable: true,
+        frame: false,
+        transparent: true,
+        backgroundColor: '#00000000',
+        webPreferences: {
+            nodeIntegration: false,
+            contextIsolation: true,
+            enableRemoteModule: false,
+            preload: path.join(__dirname, 'preload.js'),
+            enableWebGL: true,
+            experimentalFeatures: true
+        },
+        ...platformSettings,
+        hasShadow: false,
+        thickFrame: false,
+        minWidth: 280,
+        minHeight: 300,
+        maxWidth: 500,
+        maxHeight: 600
+    })
+
+    notesOverlayWindow.loadURL(
+        isDev
+            ? 'http://localhost:3000#notes-overlay'
+            : `file://${path.join(__dirname, './client/build/index.html#notes-overlay')}`
+    )
+
+    notesOverlayWindow.once('ready-to-show', () => {
+        notesOverlayWindow.show()
+        notesOverlayWindow.setBackgroundColor('#00000000')
+
+        console.log('Notes overlay window created with settings:', {
+            transparent: notesOverlayWindow.isVisible(),
+            backgroundColor: notesOverlayWindow.getBackgroundColor(),
+            platform: process.platform
+        })
+    })
+
+    notesOverlayWindow.on('closed', () => {
+        notesOverlayWindow = null
+    })
+}
+
+function closeNotesOverlayWindow() {
+    if (notesOverlayWindow) {
+        notesOverlayWindow.close()
+        notesOverlayWindow = null
     }
 }
 
@@ -196,6 +273,17 @@ function createMenu() {
                             closeOverlayWindow()
                         } else {
                             createOverlayWindow()
+                        }
+                    },
+                },
+                {
+                    label: 'Toggle Notes Overlay',
+                    accelerator: 'CmdOrCtrl+Shift+N',
+                    click: () => {
+                        if (notesOverlayWindow) {
+                            closeNotesOverlayWindow()
+                        } else {
+                            createNotesOverlayWindow()
                         }
                     },
                 },
@@ -425,6 +513,14 @@ function registerGlobalShortcuts() {
             toggleFocusMode()
         }
     })
+
+    globalShortcut.register('CmdOrCtrl+Shift+N', () => {
+        if (notesOverlayWindow) {
+            closeNotesOverlayWindow()
+        } else {
+            createNotesOverlayWindow()
+        }
+    })
 }
 
 // IPC handlers
@@ -496,6 +592,15 @@ ipcMain.handle('open-main-window', () => {
     }
 })
 
+// Add IPC handlers for notes overlay
+ipcMain.handle('create-notes-overlay', () => {
+    createNotesOverlayWindow()
+})
+
+ipcMain.handle('close-notes-overlay', () => {
+    closeNotesOverlayWindow()
+})
+
 // App event handlers
 app.whenReady().then(() => {
     // Enable hardware acceleration for better performance
@@ -504,12 +609,12 @@ app.whenReady().then(() => {
     app.commandLine.appendSwitch('ignore-gpu-blacklist');
     app.commandLine.appendSwitch('enable-gpu-rasterization');
     app.commandLine.appendSwitch('enable-zero-copy');
-    
+
     // Debug: Check hardware acceleration
     console.log('Hardware acceleration enabled:', app.commandLine.hasSwitch('enable-hardware-acceleration'));
     console.log('Platform:', process.platform);
     console.log('Electron version:', process.versions.electron);
-    
+
     createOverlayWindow() // Start with overlay instead of main window
     registerGlobalShortcuts()
 
@@ -536,6 +641,9 @@ app.on('before-quit', () => {
     // Clean up any resources
     if (overlayWindow) {
         overlayWindow.destroy()
+    }
+    if (notesOverlayWindow) {
+        notesOverlayWindow.destroy()
     }
 })
 
