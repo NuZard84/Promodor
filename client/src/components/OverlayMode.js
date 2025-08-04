@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react'
 import { Play, Pause, RotateCcw, Settings, X, Eye } from 'lucide-react'
+import ModeSelector from './ModeSelector/ModeSelector'
 
 const OverlayMode = () => {
     // Timer state
@@ -113,8 +114,8 @@ const OverlayMode = () => {
             case 'longBreak':
                 return {
                     text: 'LONG BREAK',
-                    color: '#4ECDC4',
-                    glowColor: 'rgba(78, 205, 196, 0.4)',
+                    color: '#5D7D9A',
+                    glowColor: 'rgba(78, 205, 196, 0.9)',
                     icon: '🛋️',
                     totalTime: settings.longBreakTime * 60,
                 }
@@ -143,7 +144,26 @@ const OverlayMode = () => {
     // Fixed stroke calculation: start with full circumference (no progress)
     // As progress increases, reduce the dash offset to fill the circle
     const strokeDashoffset = circumference - (progress / 100) * circumference
+    const handleModeChange = (newMode) => {
+        setMode(newMode)
+        setIsActive(false)
 
+        // Reset timer based on new mode
+        switch (newMode) {
+            case 'focus':
+                setMinutes(settings.focusTime)
+                break
+            case 'shortBreak':
+                setMinutes(settings.shortBreakTime)
+                break
+            case 'longBreak':
+                setMinutes(settings.longBreakTime)
+                break
+            default:
+                setMinutes(settings.focusTime)
+        }
+        setSeconds(0)
+    }
     return (
         <div
             className="overlay-container w-min h-full flex flex-col"
@@ -283,6 +303,12 @@ const OverlayMode = () => {
                 </div>
             </div>
 
+            <ModeSelector
+                mode={mode}
+                onModeChange={handleModeChange}
+                isActive={isActive}
+                modeInfo={modeInfo}
+            />
             {/* Bottom Control Buttons */}
             <div
                 className=" flex gap-1 justify-center space-x-6"
