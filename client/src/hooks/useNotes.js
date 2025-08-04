@@ -6,6 +6,14 @@ const useNotes = () => {
   const [editingId, setEditingId] = useState(null);
   const [editingText, setEditingText] = useState('');
   const [showInput, setShowInput] = useState(false);
+  const [selectedColor, setSelectedColor] = useState('#FF6B47'); // Default color
+
+  const colors = [
+    { id: 'high', color: '#FF6B47', label: 'High Priority' },
+    { id: 'medium', color: '#FFB443', label: 'Medium Priority' },
+    { id: 'low', color: '#4ECDC4', label: 'Low Priority' },
+    { id: 'neutral', color: '#8F9DAF', label: 'No Priority' }
+  ];
 
   // Load notes from localStorage on mount
   useEffect(() => {
@@ -25,13 +33,15 @@ const useNotes = () => {
       const note = {
         id: Date.now(),
         text: newNote.trim(),
+        color: selectedColor,
         createdAt: new Date().toISOString()
       };
       setNotes([note, ...notes]);
       setNewNote('');
       setShowInput(false);
+      setSelectedColor(colors[0].color); // Reset to default color
     }
-  }, [newNote, notes]);
+  }, [newNote, notes, selectedColor]);
 
   const deleteNote = useCallback((id) => {
     setNotes(notes.filter(note => note.id !== id));
@@ -86,13 +96,15 @@ const useNotes = () => {
     setEditingText,
     showInput,
     setShowInput,
+    selectedColor,
+    setSelectedColor,
+    colors,  // Make sure to include colors in the return
     addNote,
-    deleteNote,
     startEditing,
     saveEdit,
     cancelEdit,
-    handleKeyPress
+    deleteNote
   };
 };
 
-export default useNotes; 
+export default useNotes;
