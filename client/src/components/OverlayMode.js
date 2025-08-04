@@ -40,7 +40,27 @@ const OverlayMode = () => {
 
     const handleTimerComplete = useCallback(() => {
         setIsActive(false)
-        // Handle mode switching logic here
+
+        // Determine next mode
+        if (mode === 'focus') {
+            if (cycle >= settings.longBreakAfter) {
+                switchMode('longBreak')
+                setCycle(1)
+            } else {
+                switchMode('shortBreak')
+                setCycle(cycle + 1)
+            }
+        } else {
+            switchMode('focus')
+        }
+
+        // Show notification
+        if (window.electronAPI) {
+            window.electronAPI.showNotification({
+                title: 'Timer Complete',
+                body: `Time for ${mode === 'focus' ? 'a break!' : 'focus!'}`,
+            })
+        }
     }, [mode, cycle, settings])
 
     const toggleTimer = () => setIsActive(!isActive)
@@ -105,7 +125,7 @@ const OverlayMode = () => {
             case 'shortBreak':
                 return {
                     text: 'SHORT BREAK',
-                    color: '#4ECDC4',
+                    color: '#4CAF8B',
                     glowColor: 'rgba(78, 205, 196, 0.4)',
                     icon: '☕',
                     totalTime: settings.shortBreakTime * 60,
@@ -113,7 +133,7 @@ const OverlayMode = () => {
             case 'longBreak':
                 return {
                     text: 'LONG BREAK',
-                    color: '#4ECDC4',
+                    color: '#3A6EA5',
                     glowColor: 'rgba(78, 205, 196, 0.4)',
                     icon: '🛋️',
                     totalTime: settings.longBreakTime * 60,
@@ -124,6 +144,42 @@ const OverlayMode = () => {
                     color: '#FF6B47',
                     glowColor: 'rgba(255, 107, 71, 0.4)',
                     icon: '👁️',
+                    totalTime: settings.focusTime * 60,
+                }
+        }
+    }
+    const getModeDetails = (mode) => {
+        switch (mode) {
+            case 'focus':
+                return {
+                    text: 'FOCUS',
+                    color: '#FF6B47',
+                    glowColor: 'rgba(255, 107, 71, 0.4)',
+                    icon: '⚡',
+                    totalTime: settings.focusTime * 60,
+                }
+            case 'shortBreak':
+                return {
+                    text: 'SHORT BREAK',
+                    color: '#4CAF8B',
+                    glowColor: 'rgba(78, 205, 196, 0.4)',
+                    icon: '🍵',
+                    totalTime: settings.shortBreakTime * 60,
+                }
+            case 'longBreak':
+                return {
+                    text: 'LONG BREAK',
+                    color: '#3A6EA5',
+                    glowColor: 'rgba(78, 205, 196, 0.4)',
+                    icon: '⏳',
+                    totalTime: settings.longBreakTime * 60,
+                }
+            default:
+                return {
+                    text: 'FOCUS',
+                    color: '#FF6B47',
+                    glowColor: 'rgba(255, 107, 71, 0.4)',
+                    icon: '⚡',
                     totalTime: settings.focusTime * 60,
                 }
         }
@@ -143,6 +199,26 @@ const OverlayMode = () => {
     // Fixed stroke calculation: start with full circumference (no progress)
     // As progress increases, reduce the dash offset to fill the circle
     const strokeDashoffset = circumference - (progress / 100) * circumference
+
+    const switchMode = (newMode) => {
+        setMode(newMode)
+        setIsActive(false)
+        // Reset timer based on new mode
+        switch (newMode) {
+            case 'focus':
+                setMinutes(settings.focusTime)
+                break
+            case 'shortBreak':
+                setMinutes(settings.shortBreakTime)
+                break
+            case 'longBreak':
+                setMinutes(settings.longBreakTime)
+                break
+            default:
+                setMinutes(settings.focusTime)
+        }
+        setSeconds(0)
+    }
 
     return (
         <div
@@ -281,6 +357,40 @@ const OverlayMode = () => {
                         </div>
                     </div>
                 </div>
+            </div>
+
+            {/* Mode Switcher Buttons */}
+            <div className="flex justify-center space-x-2 mb-4">
+                <button
+                    onClick={() => switchMode('focus')}
+                    className={`px-3 py-1 rounded-full text-xs transition-all ${
+                        mode === 'focus'
+                            ? 'bg-[#a76959] bg-opacity-70 text-white'
+                            : 'bg-white bg-opacity-10 hover:bg-opacity-20 text-white text-opacity-60'
+                    }`}
+                >
+                    {getModeDetails('focus').icon}
+                </button>
+                <button
+                    onClick={() => switchMode('shortBreak')}
+                    className={`px-3 py-1 rounded-full text-xs transition-all ${
+                        mode === 'shortBreak'
+                            ? 'bg-[#4CAF8B] bg-opacity-70 text-white'
+                            : 'bg-white bg-opacity-10 hover:bg-opacity-20 text-white text-opacity-60'
+                    }`}
+                >
+                    {getModeDetails('shortBreak').icon}
+                </button>
+                <button
+                    onClick={() => switchMode('longBreak')}
+                    className={`px-3 py-1 rounded-full text-xs transition-all ${
+                        mode === 'longBreak'
+                            ? 'bg-[#3A6EA5] bg-opacity-70 text-white'
+                            : 'bg-white bg-opacity-10 hover:bg-opacity-20 text-white text-opacity-60'
+                    }`}
+                >
+                    {getModeDetails('longBreak').icon}
+                </button>
             </div>
 
             {/* Bottom Control Buttons */}
