@@ -38,7 +38,7 @@ function createWindow() {
         height: 800,
         minWidth: 800,
         minHeight: 600,
-        frame: false,
+        frame: true,
         transparent: true,
         backgroundColor: '#00000000',
         webPreferences: {
