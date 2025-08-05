@@ -100,14 +100,12 @@ const OverlayMode = () => {
         )}`
     }
 
-    const [isNotesOpened, setNotesOpened] = useState(false)
-
     const toggleNotesOverlay = () => {
-        if (window.electronAPI && !isNotesOpened) {
-            setNotesOpened(true)
-            window.electronAPI.createNotesOverlay()
+        if (window.electronAPI) {
+            window.electronAPI.toggleNotesOverlay();
         }
     }
+
     // Get mode info
     const getModeInfo = () => {
         switch (mode) {

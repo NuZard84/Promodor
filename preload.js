@@ -33,6 +33,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
     console.log('closeNotesOverlay called');
     return ipcRenderer.invoke('close-notes-overlay');
   },
+  toggleNotesOverlay: () => ipcRenderer.invoke('toggle-notes-overlay'),
 
   // Notifications
   showNotification: (options) => ipcRenderer.invoke('show-notification', options),

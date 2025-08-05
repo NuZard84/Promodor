@@ -10,7 +10,7 @@ const path = require('path')
 const isDev = require('electron-is-dev')
 
 // Add this flag at the top after isDev
-const SHOW_DEVTOOLS_IN_PRODUCTION = false; // Set to true to enable DevTools in production
+const SHOW_DEVTOOLS_IN_PRODUCTION = false // Set to true to enable DevTools in production
 
 let mainWindow
 let overlayWindow
@@ -18,13 +18,13 @@ let notesOverlayWindow
 
 // At the top of main.js, add better path resolution
 const getPreloadPath = () => {
-    const preloadPath = path.join(__dirname, 'preload.js');
-    console.log('Preload path:', preloadPath);
-    console.log('Preload exists:', require('fs').existsSync(preloadPath));
-    return preloadPath;
-};
+    const preloadPath = path.join(__dirname, 'preload.js')
+    console.log('Preload path:', preloadPath)
+    console.log('Preload exists:', require('fs').existsSync(preloadPath))
+    return preloadPath
+}
 
-const preloadPath = getPreloadPath();
+const preloadPath = getPreloadPath()
 
 function createWindow() {
     // Platform-specific configurations
@@ -76,10 +76,10 @@ function createWindow() {
     // Load the index.html from React app
     const startUrl = isDev
         ? 'http://localhost:3000'
-        : `file://${path.join(__dirname, 'client/build/index.html')}`;
+        : `file://${path.join(__dirname, 'client/build/index.html')}`
 
-    console.log('Loading main window URL:', startUrl);
-    mainWindow.loadURL(startUrl);
+    console.log('Loading main window URL:', startUrl)
+    mainWindow.loadURL(startUrl)
 
     // Show window when ready
     mainWindow.once('ready-to-show', () => {
@@ -119,9 +119,9 @@ function createWindow() {
 }
 
 function createOverlayWindow() {
-    const preloadPath = path.join(__dirname, 'preload.js');
-    console.log('Creating overlay with preload:', preloadPath);
-    console.log('Preload exists:', require('fs').existsSync(preloadPath));
+    const preloadPath = path.join(__dirname, 'preload.js')
+    console.log('Creating overlay with preload:', preloadPath)
+    console.log('Preload exists:', require('fs').existsSync(preloadPath))
 
     overlayWindow = new BrowserWindow({
         width: 280,
@@ -143,34 +143,34 @@ function createOverlayWindow() {
         },
         hasShadow: false,
         thickFrame: false,
-    });
+    })
 
     const startUrl = isDev
         ? 'http://localhost:3000#overlay'
-        : `file://${path.join(__dirname, 'client/build/index.html')}#overlay`;
+        : `file://${path.join(__dirname, 'client/build/index.html')}#overlay`
 
-    console.log('Loading overlay URL:', startUrl);
-    overlayWindow.loadURL(startUrl);
+    console.log('Loading overlay URL:', startUrl)
+    overlayWindow.loadURL(startUrl)
 
     // Add DevTools back for debugging
     if (isDev || SHOW_DEVTOOLS_IN_PRODUCTION) {
-        overlayWindow.webContents.openDevTools();
+        overlayWindow.webContents.openDevTools()
     }
 
     overlayWindow.once('ready-to-show', () => {
-        overlayWindow.show();
-        overlayWindow.setBackgroundColor('#00000000');
+        overlayWindow.show()
+        overlayWindow.setBackgroundColor('#00000000')
 
         // Add debugging after window is ready
         overlayWindow.webContents.executeJavaScript(`
             console.log('Window electronAPI:', typeof window.electronAPI);
             console.log('Available methods:', window.electronAPI ? Object.keys(window.electronAPI) : 'none');
-        `);
-    });
+        `)
+    })
 
     overlayWindow.on('closed', () => {
-        overlayWindow = null;
-    });
+        overlayWindow = null
+    })
 }
 
 function closeOverlayWindow() {
@@ -181,6 +181,13 @@ function closeOverlayWindow() {
 }
 
 function createNotesOverlayWindow() {
+    // If window exists, just show it
+    if (notesOverlayWindow) {
+        notesOverlayWindow.show()
+        notesOverlayWindow.focus()
+        return
+    }
+
     const platformConfig = {
         darwin: {
             vibrancy: 'under-window',
@@ -227,13 +234,16 @@ function createNotesOverlayWindow() {
     // Fix the URL loading for production
     const startUrl = isDev
         ? 'http://localhost:3000#notes-overlay'
-        : `file://${path.join(__dirname, 'client/build/index.html')}#notes-overlay`;
+        : `file://${path.join(
+              __dirname,
+              'client/build/index.html'
+          )}#notes-overlay`
 
-    console.log('Loading notes overlay URL:', startUrl);
-    notesOverlayWindow.loadURL(startUrl);
+    console.log('Loading notes overlay URL:', startUrl)
+    notesOverlayWindow.loadURL(startUrl)
 
     if (isDev || SHOW_DEVTOOLS_IN_PRODUCTION) {
-        notesOverlayWindow.webContents.openDevTools();
+        notesOverlayWindow.webContents.openDevTools()
     }
 
     notesOverlayWindow.once('ready-to-show', () => {
@@ -521,11 +531,7 @@ function registerGlobalShortcuts() {
     })
 
     globalShortcut.register('CmdOrCtrl+Shift+N', () => {
-        if (notesOverlayWindow) {
-            closeNotesOverlayWindow()
-        } else {
-            createNotesOverlayWindow()
-        }
+        toggleNotesOverlay()
     })
 }
 
@@ -548,12 +554,12 @@ ipcMain.handle('toggle-always-on-top', (event, enabled) => {
 })
 
 ipcMain.handle('toggle-click-through', (event, enabled) => {
-    console.log('IPC: toggle-click-through called with:', enabled);
+    console.log('IPC: toggle-click-through called with:', enabled)
     if (overlayWindow) {
-        overlayWindow.setIgnoreMouseEvents(enabled, { forward: true });
+        overlayWindow.setIgnoreMouseEvents(enabled, { forward: true })
     }
     if (notesOverlayWindow) {
-        notesOverlayWindow.setIgnoreMouseEvents(enabled, { forward: true });
+        notesOverlayWindow.setIgnoreMouseEvents(enabled, { forward: true })
     }
 })
 
@@ -594,33 +600,51 @@ ipcMain.handle('minimize-to-tray', () => {
 
 // Add new IPC handler for opening main window
 ipcMain.handle('open-main-window', () => {
-    console.log('IPC: open-main-window called');
+    console.log('IPC: open-main-window called')
     if (!mainWindow) {
-        console.log('Creating new main window');
-        createWindow();
+        console.log('Creating new main window')
+        createWindow()
     } else {
-        console.log('Showing existing main window');
-        mainWindow.show();
-        mainWindow.focus();
+        console.log('Showing existing main window')
+        mainWindow.show()
+        mainWindow.focus()
     }
 })
 
 // Add IPC handlers for notes overlay
 ipcMain.handle('create-notes-overlay', () => {
-    console.log('IPC: create-notes-overlay called');
+    console.log('IPC: create-notes-overlay called')
     if (!notesOverlayWindow) {
-        console.log('Creating new notes overlay');
-        createNotesOverlayWindow();
+        console.log('Creating new notes overlay')
+        createNotesOverlayWindow()
     } else {
-        console.log('Showing existing notes overlay');
-        notesOverlayWindow.show();
-        notesOverlayWindow.focus();
+        console.log('Showing existing notes overlay')
+        notesOverlayWindow.show()
+        notesOverlayWindow.focus()
     }
+})
+// Add this function after createNotesOverlayWindow
+function toggleNotesOverlay() {
+    if (notesOverlayWindow) {
+        if (notesOverlayWindow.isVisible()) {
+            notesOverlayWindow.hide()
+        } else {
+            notesOverlayWindow.show()
+            notesOverlayWindow.focus()
+        }
+    } else {
+        createNotesOverlayWindow()
+    }
+}
+
+// Add this with your other IPC handlers
+ipcMain.handle('toggle-notes-overlay', () => {
+    toggleNotesOverlay()
 })
 
 ipcMain.handle('close-notes-overlay', () => {
-    console.log('IPC: close-notes-overlay called');
-    closeNotesOverlayWindow();
+    console.log('IPC: close-notes-overlay called')
+    closeNotesOverlayWindow()
 })
 
 // Add missing timer event listeners for overlay windows
@@ -668,6 +692,7 @@ app.whenReady().then(() => {
     console.log('Electron version:', process.versions.electron)
 
     createOverlayWindow() // Start with overlay instead of main window
+    createNotesOverlayWindow() // Create notes window by default
     registerGlobalShortcuts()
 
     // Handle app activation (macOS)
