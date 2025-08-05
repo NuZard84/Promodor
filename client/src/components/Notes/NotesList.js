@@ -33,7 +33,7 @@ const NotesList = ({
 
     if (notes.length === 0) {
         return (
-            <div className="jetbrains-mono-200 text-center text-white text-opacity-40 text-xs mt-8">
+            <div className="jetbrains-mono-200 h-full text-center text-white text-opacity-40 text-xs mt-8">
                 No notes yet
             </div>
         )

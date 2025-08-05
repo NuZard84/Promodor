@@ -2,6 +2,7 @@ import React, { useState } from 'react'
 import { useNotes, useOverlay } from '../hooks'
 import { NotesHeader, NotesInput, NotesList } from './Notes'
 import FilterButton from './FilterButton/FilterButton'
+import PriorityCounter from './Notes/NotesCount'
 
 const NotesOverlay = () => {
     const [selectedFilter, setSelectedFilter] = useState(null)
@@ -94,7 +95,7 @@ const NotesOverlay = () => {
                 selectedFilter={selectedFilter}
                 setSelectedFilter={setSelectedFilter}
             />
-
+            <PriorityCounter notes={notes} colors={colors} />
             {/* Custom scrollbar styles */}
             <style jsx>{`
                 .custom-scrollbar::-webkit-scrollbar {

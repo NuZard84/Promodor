@@ -369,7 +369,7 @@ const OverlayMode = () => {
                 {/* Settings Button */}
                 <button
                     onClick={openMainWindow}
-                    className="w-8 h-8 rounded-full bg-white bg-opacity-10 hover:bg-opacity-20 text-white text-opacity-60 hover:text-opacity-100 transition-all flex items-center justify-center"
+                    className="hidden w-8 h-8 rounded-full bg-white bg-opacity-10 hover:bg-opacity-20 text-white text-opacity-60 hover:text-opacity-100 transition-all flex items-center justify-center"
                     style={{
                         backdropFilter: 'blur(10px)',
                         border: '1px solid rgba(255, 255, 255, 0.1)',
