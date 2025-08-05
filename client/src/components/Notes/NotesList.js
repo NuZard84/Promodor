@@ -80,7 +80,7 @@ const NotesList = ({
                                     }}
                                     autoFocus
                                 />
-                                <div className="flex space-x-2">
+                                <div className="flex space-x-2 ">
                                     <button
                                         onClick={saveEdit}
                                         className="p-1 rounded bg-green-500 bg-opacity-20 hover:bg-opacity-30 text-green-300 transition-all"
@@ -101,16 +101,16 @@ const NotesList = ({
                                     <p className="text-white text-xs flex-1 leading-relaxed">
                                         {note.text}
                                     </p>
-                                    <div className="flex space-x-1 opacity-0 group-hover:opacity-100 transition-opacity ml-2">
+                                    <div className="flex space-x-1 opacity-0 group-hover:opacity-100 transition-opacity ml-2 absolute right-0 bottom-0">
                                         <button
                                             onClick={() => startEditing(note)}
-                                            className="p-1 rounded bg-white bg-opacity-10 hover:bg-opacity-20 text-white text-opacity-60 hover:text-opacity-100 transition-all"
+                                            className="p-1 rounded bg-white/70 text-black hover:bg-white/50 transition-all"
                                         >
                                             <Edit3 size={10} />
                                         </button>
                                         <button
                                             onClick={() => deleteNote(note.id)}
-                                            className="p-1 rounded bg-red-500 bg-opacity-20 hover:bg-opacity-30 text-red-400 hover:text-red-300 transition-all"
+                                            className="p-1 rounded bg-red-500/70 text-white hover:bg-red-500/50 transition-all"
                                         >
                                             <Trash2 size={10} />
                                         </button>
