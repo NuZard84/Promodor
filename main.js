@@ -8,9 +8,23 @@ const {
 } = require('electron')
 const path = require('path')
 const isDev = require('electron-is-dev')
+
+// Add this flag at the top after isDev
+const SHOW_DEVTOOLS_IN_PRODUCTION = false; // Set to true to enable DevTools in production
+
 let mainWindow
 let overlayWindow
 let notesOverlayWindow
+
+// At the top of main.js, add better path resolution
+const getPreloadPath = () => {
+    const preloadPath = path.join(__dirname, 'preload.js');
+    console.log('Preload path:', preloadPath);
+    console.log('Preload exists:', require('fs').existsSync(preloadPath));
+    return preloadPath;
+};
+
+const preloadPath = getPreloadPath();
 
 function createWindow() {
     // Platform-specific configurations
@@ -46,7 +60,7 @@ function createWindow() {
             nodeIntegration: true,
             contextIsolation: true,
             enableRemoteModule: false,
-            preload: path.join(__dirname, 'preload.js'),
+            preload: preloadPath,
             // Enable hardware acceleration for better performance
             enableWebGL: true,
             experimentalFeatures: true,
@@ -60,11 +74,12 @@ function createWindow() {
     })
 
     // Load the index.html from React app
-    mainWindow.loadURL(
-        isDev
-            ? 'http://localhost:3000'
-            : `file://${path.join(__dirname, './client/build/index.html')}`
-    )
+    const startUrl = isDev
+        ? 'http://localhost:3000'
+        : `file://${path.join(__dirname, 'client/build/index.html')}`;
+
+    console.log('Loading main window URL:', startUrl);
+    mainWindow.loadURL(startUrl);
 
     // Show window when ready
     mainWindow.once('ready-to-show', () => {
@@ -85,7 +100,7 @@ function createWindow() {
     })
 
     // Open DevTools if in development mode
-    if (isDev) {
+    if (isDev || SHOW_DEVTOOLS_IN_PRODUCTION) {
         mainWindow.webContents.openDevTools()
     }
 
@@ -104,22 +119,9 @@ function createWindow() {
 }
 
 function createOverlayWindow() {
-    // Platform-specific configurations for overlay
-    const platformConfig = {
-        darwin: {
-            vibrancy: 'under-window',
-            visualEffectState: 'active',
-        },
-        win32: {
-            visualEffectState: 'active',
-        },
-        linux: {
-            visualEffectState: 'active',
-        },
-    }
-
-    const currentPlatform = process.platform
-    const platformSettings = platformConfig[currentPlatform] || {}
+    const preloadPath = path.join(__dirname, 'preload.js');
+    console.log('Creating overlay with preload:', preloadPath);
+    console.log('Preload exists:', require('fs').existsSync(preloadPath));
 
     overlayWindow = new BrowserWindow({
         width: 280,
@@ -135,47 +137,40 @@ function createOverlayWindow() {
             nodeIntegration: false,
             contextIsolation: true,
             enableRemoteModule: false,
-            preload: path.join(__dirname, 'preload.js'),
-            // Enable hardware acceleration for better performance
+            preload: preloadPath,
             enableWebGL: true,
             experimentalFeatures: true,
         },
-        // Platform-specific settings
-        ...platformSettings,
-        // Additional settings for better transparency
         hasShadow: false,
         thickFrame: false,
-    })
+    });
 
-    overlayWindow.loadURL(
-        isDev
-            ? 'http://localhost:3000#overlay'
-            : `file://${path.join(
-                  __dirname,
-                  './client/build/index.html#overlay'
-              )}`
-    )
+    const startUrl = isDev
+        ? 'http://localhost:3000#overlay'
+        : `file://${path.join(__dirname, 'client/build/index.html')}#overlay`;
+
+    console.log('Loading overlay URL:', startUrl);
+    overlayWindow.loadURL(startUrl);
+
+    // Add DevTools back for debugging
+    if (isDev || SHOW_DEVTOOLS_IN_PRODUCTION) {
+        overlayWindow.webContents.openDevTools();
+    }
 
     overlayWindow.once('ready-to-show', () => {
-        overlayWindow.show()
-        // Ensure transparency is properly set after window is shown
-        overlayWindow.setBackgroundColor('#00000000')
+        overlayWindow.show();
+        overlayWindow.setBackgroundColor('#00000000');
 
-        // Debug: Log overlay window settings
-        console.log('Overlay window created with settings:', {
-            transparent: overlayWindow.isVisible(),
-            backgroundColor: overlayWindow.getBackgroundColor(),
-            platform: process.platform,
-            vibrancy:
-                process.platform === 'darwin'
-                    ? 'under-window'
-                    : 'not supported',
-        })
-    })
+        // Add debugging after window is ready
+        overlayWindow.webContents.executeJavaScript(`
+            console.log('Window electronAPI:', typeof window.electronAPI);
+            console.log('Available methods:', window.electronAPI ? Object.keys(window.electronAPI) : 'none');
+        `);
+    });
 
     overlayWindow.on('closed', () => {
-        overlayWindow = null
-    })
+        overlayWindow = null;
+    });
 }
 
 function closeOverlayWindow() {
@@ -216,7 +211,7 @@ function createNotesOverlayWindow() {
             nodeIntegration: false,
             contextIsolation: true,
             enableRemoteModule: false,
-            preload: path.join(__dirname, 'preload.js'),
+            preload: preloadPath,
             enableWebGL: true,
             experimentalFeatures: true,
         },
@@ -229,14 +224,17 @@ function createNotesOverlayWindow() {
         maxHeight: 600,
     })
 
-    notesOverlayWindow.loadURL(
-        isDev
-            ? 'http://localhost:3000#notes-overlay'
-            : `file://${path.join(
-                  __dirname,
-                  './client/build/index.html#notes-overlay'
-              )}`
-    )
+    // Fix the URL loading for production
+    const startUrl = isDev
+        ? 'http://localhost:3000#notes-overlay'
+        : `file://${path.join(__dirname, 'client/build/index.html')}#notes-overlay`;
+
+    console.log('Loading notes overlay URL:', startUrl);
+    notesOverlayWindow.loadURL(startUrl);
+
+    if (isDev || SHOW_DEVTOOLS_IN_PRODUCTION) {
+        notesOverlayWindow.webContents.openDevTools();
+    }
 
     notesOverlayWindow.once('ready-to-show', () => {
         notesOverlayWindow.show()
@@ -550,8 +548,12 @@ ipcMain.handle('toggle-always-on-top', (event, enabled) => {
 })
 
 ipcMain.handle('toggle-click-through', (event, enabled) => {
+    console.log('IPC: toggle-click-through called with:', enabled);
     if (overlayWindow) {
-        overlayWindow.setIgnoreMouseEvents(enabled, { forward: true })
+        overlayWindow.setIgnoreMouseEvents(enabled, { forward: true });
+    }
+    if (notesOverlayWindow) {
+        notesOverlayWindow.setIgnoreMouseEvents(enabled, { forward: true });
     }
 })
 
@@ -592,21 +594,60 @@ ipcMain.handle('minimize-to-tray', () => {
 
 // Add new IPC handler for opening main window
 ipcMain.handle('open-main-window', () => {
+    console.log('IPC: open-main-window called');
     if (!mainWindow) {
-        createWindow()
+        console.log('Creating new main window');
+        createWindow();
     } else {
-        mainWindow.show()
-        mainWindow.focus()
+        console.log('Showing existing main window');
+        mainWindow.show();
+        mainWindow.focus();
     }
 })
 
 // Add IPC handlers for notes overlay
 ipcMain.handle('create-notes-overlay', () => {
-    createNotesOverlayWindow()
+    console.log('IPC: create-notes-overlay called');
+    if (!notesOverlayWindow) {
+        console.log('Creating new notes overlay');
+        createNotesOverlayWindow();
+    } else {
+        console.log('Showing existing notes overlay');
+        notesOverlayWindow.show();
+        notesOverlayWindow.focus();
+    }
 })
 
 ipcMain.handle('close-notes-overlay', () => {
-    closeNotesOverlayWindow()
+    console.log('IPC: close-notes-overlay called');
+    closeNotesOverlayWindow();
+})
+
+// Add missing timer event listeners for overlay windows
+ipcMain.on('toggle-timer', (event) => {
+    // Forward to all windows
+    if (mainWindow) {
+        mainWindow.webContents.send('toggle-timer')
+    }
+    if (overlayWindow) {
+        overlayWindow.webContents.send('toggle-timer')
+    }
+    if (notesOverlayWindow) {
+        notesOverlayWindow.webContents.send('toggle-timer')
+    }
+})
+
+ipcMain.on('reset-timer', (event) => {
+    // Forward to all windows
+    if (mainWindow) {
+        mainWindow.webContents.send('reset-timer')
+    }
+    if (overlayWindow) {
+        overlayWindow.webContents.send('reset-timer')
+    }
+    if (notesOverlayWindow) {
+        notesOverlayWindow.webContents.send('reset-timer')
+    }
 })
 
 // App event handlers
