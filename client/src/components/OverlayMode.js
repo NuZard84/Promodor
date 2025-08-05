@@ -251,7 +251,7 @@ const OverlayMode = () => {
                             cx="90"
                             cy="90"
                             r={radius}
-                            stroke="rgba(255, 255, 255, 0.1)"
+                            stroke="rgba(255, 255, 255, 0.2)"
                             strokeWidth="10"
                             fill="none"
                         />
