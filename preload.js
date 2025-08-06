@@ -1,47 +1,61 @@
-const { contextBridge, ipcRenderer } = require('electron');
+const { contextBridge, ipcRenderer } = require('electron')
 
-console.log('Preload script loaded');
+console.log('Preload script loaded')
 
 contextBridge.exposeInMainWorld('electronAPI', {
-  // Window controls
-  openMainWindow: () => {
-    console.log('openMainWindow called');
-    return ipcRenderer.invoke('open-main-window');
-  },
-  closeOverlay: () => {
-    console.log('closeOverlay called');
-    return ipcRenderer.invoke('close-overlay');
-  },
-  createOverlay: () => ipcRenderer.invoke('create-overlay'),
+    // Window controls
+    openMainWindow: () => {
+        console.log('openMainWindow called')
+        return ipcRenderer.invoke('open-main-window')
+    },
+    closeOverlay: () => {
+        console.log('closeOverlay called')
+        return ipcRenderer.invoke('close-overlay')
+    },
+    createOverlay: () => ipcRenderer.invoke('create-overlay'),
 
-  // Overlay controls
-  toggleClickThrough: (enabled) => {
-    console.log('toggleClickThrough called with:', enabled);
-    return ipcRenderer.invoke('toggle-click-through', enabled);
-  },
+    // Overlay controls
+    toggleClickThrough: (enabled) => {
+        console.log('toggleClickThrough called with:', enabled)
+        return ipcRenderer.invoke('toggle-click-through', enabled)
+    },
 
-  // Timer controls
-  toggleTimer: () => ipcRenderer.send('toggle-timer'),
-  resetTimer: () => ipcRenderer.send('reset-timer'),
+    // Timer controls
+    toggleTimer: () => ipcRenderer.send('toggle-timer'),
+    resetTimer: () => ipcRenderer.send('reset-timer'),
 
-  // Notes overlay controls
-  createNotesOverlay: () => {
-    console.log('createNotesOverlay called');
-    return ipcRenderer.invoke('create-notes-overlay');
-  },
-  closeNotesOverlay: () => {
-    console.log('closeNotesOverlay called');
-    return ipcRenderer.invoke('close-notes-overlay');
-  },
-  toggleNotesOverlay: () => ipcRenderer.invoke('toggle-notes-overlay'),
+    // Notes overlay controls
+    createNotesOverlay: () => {
+        console.log('createNotesOverlay called')
+        return ipcRenderer.invoke('create-notes-overlay')
+    },
+    closeNotesOverlay: () => {
+        console.log('closeNotesOverlay called')
+        return ipcRenderer.invoke('close-notes-overlay')
+    },
+    toggleHyperMode: () => ipcRenderer.invoke('toggle-hyper-mode'),
 
-  // Notifications
-  showNotification: (options) => ipcRenderer.invoke('show-notification', options),
+    // Listen for shortcut events from main process
+    onToggleHyperMode: (callback) => {
+        ipcRenderer.on('toggle-hyper-mode', callback)
 
-  // Listen for events from main process
-  onShortcut: (channel, callback) => {
-    ipcRenderer.on(channel, callback);
-  }
-});
+        // Return cleanup function
+        return () => {
+            ipcRenderer.removeListener('toggle-hyper-mode', callback)
+        }
+    },
+    // Notifications
+    showNotification: (options) =>
+        ipcRenderer.invoke('show-notification', options),
 
-console.log('electronAPI exposed to window');
+    // Listen for events from main process
+    onShortcut: (channel, callback) => {
+        ipcRenderer.on(channel, callback)
+
+        return () => {
+            ipcRenderer.removeListener(channel, callback)
+        }
+    },
+})
+
+console.log('electronAPI exposed to window')

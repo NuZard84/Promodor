@@ -533,6 +533,30 @@ function registerGlobalShortcuts() {
     globalShortcut.register('CmdOrCtrl+Shift+N', () => {
         toggleNotesOverlay()
     })
+    globalShortcut.register('CmdOrCtrl+Shift+A', () => {
+        console.log('Hypermode shortcut triggered!')
+
+        // Send to all windows that might be listening
+        if (overlayWindow && !overlayWindow.isDestroyed()) {
+            console.log('Sending to overlay window')
+            overlayWindow.webContents.send('toggle-hyper-mode')
+        }
+        if (notesOverlayWindow && !notesOverlayWindow.isDestroyed()) {
+            console.log('Sending to notes overlay window')
+            notesOverlayWindow.webContents.send('toggle-hyper-mode')
+        }
+        if (mainWindow && !mainWindow.isDestroyed()) {
+            console.log('Sending to main window')
+            mainWindow.webContents.send('toggle-hyper-mode')
+        }
+
+        // Debug: Check which windows are available
+        console.log('Windows status:', {
+            overlay: overlayWindow ? 'exists' : 'null',
+            notesOverlay: notesOverlayWindow ? 'exists' : 'null',
+            main: mainWindow ? 'exists' : 'null',
+        })
+    })
 }
 
 // IPC handlers
@@ -636,6 +660,23 @@ function toggleNotesOverlay() {
         createNotesOverlayWindow()
     }
 }
+
+ipcMain.handle('toggle-hyper-mode', () => {
+    console.log('Manual hypermode toggle from renderer')
+
+    // Send to all windows that might be listening
+    if (overlayWindow && !overlayWindow.isDestroyed()) {
+        overlayWindow.webContents.send('toggle-hyper-mode')
+    }
+    if (notesOverlayWindow && !notesOverlayWindow.isDestroyed()) {
+        notesOverlayWindow.webContents.send('toggle-hyper-mode')
+    }
+    if (mainWindow && !mainWindow.isDestroyed()) {
+        mainWindow.webContents.send('toggle-hyper-mode')
+    }
+
+    return true
+})
 
 // Add this with your other IPC handlers
 ipcMain.handle('toggle-notes-overlay', () => {

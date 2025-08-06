@@ -9,6 +9,7 @@ import {
     NotepadTextIcon,
 } from 'lucide-react'
 import ModeSelector from './ModeSelector/ModeSelector'
+import useGlobalShortcuts from '../hooks/useGlobalHooks'
 
 const OverlayMode = () => {
     // Timer state
@@ -102,7 +103,7 @@ const OverlayMode = () => {
 
     const toggleNotesOverlay = () => {
         if (window.electronAPI) {
-            window.electronAPI.toggleNotesOverlay();
+            window.electronAPI.toggleNotesOverlay()
         }
     }
 
@@ -143,7 +144,7 @@ const OverlayMode = () => {
                 }
         }
     }
-
+    const { hyperMode } = useGlobalShortcuts()
     const modeInfo = getModeInfo()
     const currentTimeInSeconds = minutes * 60 + seconds
 
@@ -240,7 +241,7 @@ const OverlayMode = () => {
                 }}
             >
                 {/* Circular Progress */}
-                <div className="relative mb-4">
+                <div className="relative ">
                     <svg
                         width="180"
                         height="180"
@@ -320,16 +321,19 @@ const OverlayMode = () => {
                     </div>
                 </div>
             </div>
-
-            <ModeSelector
-                mode={mode}
-                onModeChange={handleModeChange}
-                isActive={isActive}
-                modeInfo={modeInfo}
-            />
-            {/* Bottom Control Buttons */}
+            <div className={` ${hyperMode ? 'hidden' : ''}`}>
+                <ModeSelector
+                    mode={mode}
+                    onModeChange={handleModeChange}
+                    isActive={isActive}
+                    modeInfo={modeInfo}
+                />
+                {/* Bottom Control Buttons */}
+            </div>
             <div
-                className=" flex  justify-center gap-2"
+                className={`flex  justify-center gap-2 ${
+                    hyperMode ? 'hidden' : ''
+                }`}
                 style={{
                     WebkitAppRegion: 'no-drag',
                     pointerEvents: isClickThrough ? 'none' : 'auto',
