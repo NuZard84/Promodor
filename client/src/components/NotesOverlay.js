@@ -95,7 +95,16 @@ const NotesOverlay = () => {
                 selectedFilter={selectedFilter}
                 setSelectedFilter={setSelectedFilter}
             />
-            <PriorityCounter notes={notes} colors={colors} />
+            <PriorityCounter
+                notes={notes}
+                colors={colors}
+                selectedFilter={selectedFilter}
+                setSelectedFilter={setSelectedFilter}
+                showFilters={showFilters}
+                setShowFilters={setShowFilters}
+                isClickThrough={isClickThrough}
+
+            />
             {/* Custom scrollbar styles */}
             <style jsx>{`
                 .custom-scrollbar::-webkit-scrollbar {

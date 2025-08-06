@@ -14,7 +14,6 @@ const NotesHeader = ({
             style={{
                 WebkitAppRegion: isClickThrough ? 'no-drag' : 'drag',
                 cursor: isClickThrough ? 'default' : 'move',
-                // pointerEvents: isClickThrough ? 'none' : 'auto',
             }}
         >
             <h2 className="text-white text-sm font-medium">Quick Notes</h2>
