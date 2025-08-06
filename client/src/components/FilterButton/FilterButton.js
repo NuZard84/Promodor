@@ -15,7 +15,7 @@ const FilterButton = ({
     ]
 
     return (
-        <div className="relative jetbrains-mono-200 ">
+        <div className="relative Bricolage_Grotesque ">
             <button
                 onClick={() => setShowFilters(!showFilters)}
                 className="w-7 h-7 rounded-lg bg-white bg-opacity-10 hover:bg-opacity-20 text-white text-opacity-60 hover:text-opacity-100 transition-all flex items-center justify-center"

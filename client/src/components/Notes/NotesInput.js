@@ -46,7 +46,7 @@ const NotesInput = ({
       <div style={{ pointerEvents: isClickThrough ? 'none' : 'auto' }}>
         <button
           onClick={() => setShowInput(true)}
-          className="jetbrains-mono-200 w-full p-1 text-xs rounded-md bg-white bg-opacity-10 hover:bg-opacity-20 text-white text-opacity-60 hover:text-opacity-100 transition-all flex items-center justify-center space-x-2"
+          className="Bricolage_Grotesque w-full p-1 text-xs rounded-md bg-white bg-opacity-10 hover:bg-opacity-20 text-white text-opacity-60 hover:text-opacity-100 transition-all flex items-center justify-center space-x-2"
           style={{
             border: '1px solid rgba(255, 255, 255, 0.1)',
             backdropFilter: 'blur(10px)'

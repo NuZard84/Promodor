@@ -10,19 +10,18 @@ import {
 } from 'lucide-react'
 import ModeSelector from './ModeSelector/ModeSelector'
 import useGlobalShortcuts from '../hooks/useGlobalHooks'
-
 const OverlayMode = () => {
     // Timer state
-    const [minutes, setMinutes] = useState(1)
+    const [minutes, setMinutes] = useState(25)
     const [seconds, setSeconds] = useState(0)
     const [isActive, setIsActive] = useState(false)
     const [mode, setMode] = useState('focus')
-    const [cycle, setCycle] = useState(5)
+    const [cycle, setCycle] = useState(0)
     const [isClickThrough, setIsClickThrough] = useState(false)
 
     // Settings
     const [settings, setSettings] = useState({
-        focusTime: 1,
+        focusTime: 25,
         shortBreakTime: 5,
         longBreakTime: 15,
         longBreakAfter: 4,
@@ -193,7 +192,7 @@ const OverlayMode = () => {
     }
     return (
         <div
-            className="overlay-container w-min h-full flex flex-col"
+            className="overlay-container w-min h-full flex flex-col "
             style={{
                 borderRadius: '35px',
                 border: '1px solid rgba(255, 255, 255, 0.21)',
@@ -201,9 +200,6 @@ const OverlayMode = () => {
                 cursor: isClickThrough ? 'default' : 'move',
                 padding: '16px',
                 background: 'rgba(0, 0, 0, 0.5)',
-                backdropFilter: 'blur(20px)',
-                WebkitBackdropFilter: 'blur(20px)',
-                boxShadow: '0 8px 32px rgba(0, 0, 0, 0.3)',
             }}
         >
             {/* Top Controls */}
@@ -295,53 +291,32 @@ const OverlayMode = () => {
 
                     {/* Timer Text */}
                     <div className="absolute inset-0 flex flex-col items-center justify-center">
-                        <div className="jetbrains-mono-200 font-light text-white text-3xl tracking-wide mb-2">
+                        <div className="Bricolage_Grotesque font-bold text-white text-3xl tracking-wide mb-2">
                             {formatTime(minutes, seconds)}
                         </div>
                         {/* Cycle dots */}
                         <div className="flex space-x-2">
-                            {cycle < 4 ? (
-                                [...Array(settings.longBreakAfter)].map(
-                                    (_, i) => (
-                                        <div
-                                            key={i}
-                                            className={`w-[4px] h-2 rounded-full transition-all ${
-                                                i < cycle
-                                                    ? 'bg-[#FF6B47] bg-opacity-70'
-                                                    : 'bg-white bg-opacity-35'
-                                            }`}
-                                            style={{
-                                                boxShadow:
-                                                    i < cycle
-                                                        ? `0 0 6px ${modeInfo.color}60`
-                                                        : 'none',
-                                            }}
-                                        />
-                                    )
-                                )
-                            ) : (
-                                <>
-                                    <div className="flex flex-row items-center justify-center ">
-                                        <p
-                                            className="jetbrains-mono-200 font-semibold"
-                                            style={{ color: '#FF6B47' }}
-                                        >
-                                            {cycle}⚡
-                                        </p>
-                                        <div className="h-[50%] w-[1.5px] bg-white/20 mr-2"></div>
-                                        <p
-                                            className="jetbrains-mono-200 font-semibold "
-                                            style={{ color: '#FF6B47' }}
-                                        >
-                                            {cycle * 25}⏱️
-                                        </p>
-                                    </div>
-                                </>
-                            )}
+                            <>
+                                <div className="flex flex-row items-center justify-center Bricolage_Grotesque">
+                                    <p
+                                        className=" font-semibold"
+                                        style={{ color: '#FF6B47' }}
+                                    >
+                                        {cycle}⚡
+                                    </p>
+                                    <div className="h-[50%] w-[1.5px] bg-white/20 mr-2"></div>
+                                    <p
+                                        className=" font-semibold "
+                                        style={{ color: '#FF6B47' }}
+                                    >
+                                        {cycle * 25}⏱️
+                                    </p>
+                                </div>
+                            </>
                         </div>
                         {/* Mode Label */}
                         <div
-                            className="jetbrains-mono-100 text-center mb-1"
+                            className=" text-center mb-1"
                             style={{
                                 WebkitAppRegion: isClickThrough
                                     ? 'no-drag'
@@ -388,7 +363,7 @@ const OverlayMode = () => {
                 {/* Play/Pause Button */}
                 <button
                     onClick={toggleTimer}
-                    className="jetbrains-mono-200 px-5 text-xs rounded-full bg-white bg-opacity-15 hover:bg-opacity-25 text-white transition-all flex items-center justify-center"
+                    className="Bricolage_Grotesque px-5 text-xs rounded-full bg-white bg-opacity-15 hover:bg-opacity-25 text-white transition-all flex items-center justify-center"
                     style={{
                         backdropFilter: 'blur(10px)',
                         border: '1px solid rgba(255, 255, 255, 0.15)',
@@ -427,6 +402,7 @@ const OverlayMode = () => {
                 </button>
             </div>
 
+           
             {/* Bottom Shortcut Hint */}
             <div
                 className="hidden text-center text-white text-opacity-30 text-xs mt-4"

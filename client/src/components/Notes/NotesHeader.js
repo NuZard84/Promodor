@@ -1,5 +1,6 @@
 import React from 'react'
 import { Eye, Settings, X } from 'lucide-react'
+import CompactShortcutsHelp from '../hotkeysList/hotKeysList'
 
 const NotesHeader = ({
     isClickThrough,
@@ -10,7 +11,7 @@ const NotesHeader = ({
 }) => {
     return (
         <div
-            className="jetbrains-mono-200 flex justify-between items-center mb-4"
+            className="Bricolage_Grotesque flex justify-between items-center mb-4"
             style={{
                 WebkitAppRegion: isClickThrough ? 'no-drag' : 'drag',
                 cursor: isClickThrough ? 'default' : 'move',
@@ -30,7 +31,13 @@ const NotesHeader = ({
                 >
                     <Eye size={12} />
                 </button>
-
+                <div
+                    style={{
+                        WebkitAppRegion: 'no-drag',
+                    }}
+                >
+                    <CompactShortcutsHelp />
+                </div>
                 <button
                     onClick={closeOverlay}
                     className="hidden w-7 h-7 rounded-full bg-red-500 bg-opacity-20 hover:bg-opacity-40 text-red-400 hover:text-red-300 transition-all flex items-center justify-center"

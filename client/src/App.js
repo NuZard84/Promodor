@@ -118,16 +118,13 @@ const App = () => {
           {/* Timer Section */}
           <div className="xl:col-span-2">
             <div
-              className="rounded-3xl shadow-2xl p-12 text-center backdrop-blur-xl border relative overflow-hidden"
+              className="rounded-3xl p-12 text-center backdrop-blur-xl border relative overflow-hidden"
               style={{
                 background: `
                   ${modeInfo.bgGradient},
                   ${colors.cardBg}
                 `,
                 borderColor: colors.border,
-                boxShadow: isDarkMode
-                  ? '0 25px 50px rgba(0, 0, 0, 0.3)'
-                  : '0 25px 50px rgba(0, 0, 0, 0.1)'
               }}
             >
               {/* Timer Display */}

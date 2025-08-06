@@ -33,7 +33,7 @@ const NotesList = ({
 
     if (notes.length === 0) {
         return (
-            <div className="jetbrains-mono-200 h-full text-center text-white text-opacity-40 text-xs mt-8">
+            <div className="Bricolage_Grotesque h-full text-center text-white text-opacity-40 text-xs mt-8">
                 No notes yet
             </div>
         )
@@ -41,7 +41,7 @@ const NotesList = ({
 
     return (
         <div
-            className="jetbrains-mono-200 custom-scrollbar h-full flex flex-col"
+            className="Bricolage_Grotesque custom-scrollbar h-full flex flex-col"
             style={{
                 WebkitAppRegion: 'no-drag',
                 flex: '1 1 auto',

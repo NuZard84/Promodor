@@ -21,7 +21,7 @@ const PriorityCounter = ({
                 pointerEvents: isClickThrough ? 'none' : 'auto',
                 WebkitAppRegion: 'no-drag',
             }}
-            className="jetbrains-mono-200 mt-auto gap-2 pt-1 border-t border-white/10 w-full flex-1 flex justify-center items-center"
+            className="Bricolage_Grotesque mt-auto gap-2 pt-1 border-t border-white/10 w-full flex-1 flex justify-center items-center"
         >
             <div className="flex  justify-start gap-2 items-center  text-xs">
                 {colors.map((colorItem) => {

@@ -51,9 +51,6 @@ function createWindow() {
     mainWindow = new BrowserWindow({
         width: 1200,
         height: 800,
-        minWidth: 800,
-        minHeight: 600,
-
         transparent: true,
         backgroundColor: '#00000000',
         webPreferences: {
@@ -225,8 +222,6 @@ function createNotesOverlayWindow() {
         ...platformSettings,
         hasShadow: false,
         thickFrame: false,
-        minWidth: 280,
-        minHeight: 300,
         maxWidth: 500,
         maxHeight: 600,
     })
