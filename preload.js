@@ -47,7 +47,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
     // Notifications
     showNotification: (options) =>
         ipcRenderer.invoke('show-notification', options),
-
+    toggleNotesOverlay: () => ipcRenderer.invoke('toggle-notes-overlay'),
     // Listen for events from main process
     onShortcut: (channel, callback) => {
         ipcRenderer.on(channel, callback)

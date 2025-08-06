@@ -29,8 +29,12 @@ const useGlobalShortcuts = () => {
         }
     }, [])
 
+    const setToggleHyperMode = () => {
+        setHyperMode(!hyperMode)
+    }
     return {
         hyperMode,
+        setToggleHyperMode, // For testing
     }
 }
 

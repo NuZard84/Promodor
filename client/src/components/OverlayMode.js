@@ -49,7 +49,10 @@ const OverlayMode = () => {
     }, [isActive, seconds, minutes])
 
     const handleTimerComplete = useCallback(() => {
-        setIsActive(false)
+        resetTimer()
+        if (mode === 'focus') {
+            setCycle(cycle + 1)
+        }
         // Handle mode switching logic here
     }, [mode, cycle, settings])
 
@@ -57,11 +60,14 @@ const OverlayMode = () => {
     const resetTimer = () => {
         setIsActive(false)
         if (mode === 'focus') {
-            setMinutes(settings.focusTime)
-        } else if (mode === 'shortBreak') {
+            setMode('shortBreak')
             setMinutes(settings.shortBreakTime)
+        } else if (mode === 'shortBreak') {
+            setMode('focus')
+            setMinutes(settings.focusTime)
         } else {
-            setMinutes(settings.longBreakTime)
+            setMode('focus')
+            setMinutes(settings.focusTime)
         }
         setSeconds(0)
     }
@@ -288,22 +294,44 @@ const OverlayMode = () => {
                         </div>
                         {/* Cycle dots */}
                         <div className="flex space-x-2">
-                            {[...Array(settings.longBreakAfter)].map((_, i) => (
-                                <div
-                                    key={i}
-                                    className={`w-[4px] h-2 rounded-full transition-all ${
-                                        i < cycle
-                                            ? 'bg-[#FF6B47] bg-opacity-70'
-                                            : 'bg-white bg-opacity-35'
-                                    }`}
-                                    style={{
-                                        boxShadow:
-                                            i < cycle
-                                                ? `0 0 6px ${modeInfo.color}60`
-                                                : 'none',
-                                    }}
-                                />
-                            ))}
+                            {cycle < 4 ? (
+                                [...Array(settings.longBreakAfter)].map(
+                                    (_, i) => (
+                                        <div
+                                            key={i}
+                                            className={`w-[4px] h-2 rounded-full transition-all ${
+                                                i < cycle
+                                                    ? 'bg-[#FF6B47] bg-opacity-70'
+                                                    : 'bg-white bg-opacity-35'
+                                            }`}
+                                            style={{
+                                                boxShadow:
+                                                    i < cycle
+                                                        ? `0 0 6px ${modeInfo.color}60`
+                                                        : 'none',
+                                            }}
+                                        />
+                                    )
+                                )
+                            ) : (
+                                <>
+                                    <div className="flex flex-row items-center justify-center ">
+                                        <p
+                                            className="jetbrains-mono-200 font-semibold"
+                                            style={{ color: '#FF6B47' }}
+                                        >
+                                            {cycle}⚡
+                                        </p>
+                                        <div className="h-[50%] w-[1.5px] bg-white/20 mr-2"></div>
+                                        <p
+                                            className="jetbrains-mono-200 font-semibold "
+                                            style={{ color: '#FF6B47' }}
+                                        >
+                                            {cycle * 25}⏱️
+                                        </p>
+                                    </div>
+                                </>
+                            )}
                         </div>
                         {/* Mode Label */}
                         <div
