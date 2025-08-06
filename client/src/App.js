@@ -118,7 +118,7 @@ const App = () => {
           {/* Timer Section */}
           <div className="xl:col-span-2">
             <div
-              className="rounded-3xl p-12 text-center backdrop-blur-xl border relative overflow-hidden"
+              className="rounded-3xl p-12 text-center border relative overflow-hidden"
               style={{
                 background: `
                   ${modeInfo.bgGradient},

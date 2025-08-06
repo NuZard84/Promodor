@@ -45,7 +45,7 @@ const CompactShortcutsHelp = () => {
             {/* Compact Modal */}
             {isOpen && (
                 <div
-                    className="fixed inset-0 z-[9999] flex items-start justify-start backdrop-blur-[6px] "
+                    className="fixed inset-0 z-[9999] flex items-start justify-start"
                     style={{
                         WebkitAppRegion: 'no-drag',
                     }}

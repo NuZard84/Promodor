@@ -13,7 +13,7 @@ const TaskList = ({
 }) => {
   return (
     <div
-      className="rounded-3xl shadow-2xl p-6 backdrop-blur-xl border"
+      className="rounded-3xl shadow-2xl p-6 border"
       style={{
         background: colors.cardBg,
         borderColor: colors.border,

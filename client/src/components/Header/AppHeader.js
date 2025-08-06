@@ -10,7 +10,7 @@ const AppHeader = ({
 }) => {
   return (
     <div
-      className="flex justify-between items-center p-6 backdrop-blur-xl border-b"
+      className="flex justify-between items-center p-6 border-b"
       style={{
         background: colors.headerBg,
         borderColor: colors.border

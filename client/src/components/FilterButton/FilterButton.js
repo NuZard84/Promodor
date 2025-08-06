@@ -20,7 +20,7 @@ const FilterButton = ({
                 onClick={() => setShowFilters(!showFilters)}
                 className="w-7 h-7 rounded-lg bg-white bg-opacity-10 hover:bg-opacity-20 text-white text-opacity-60 hover:text-opacity-100 transition-all flex items-center justify-center"
                 style={{
-                    backdropFilter: 'blur(10px)',
+                  
                     border: '1px solid rgba(255, 255, 255, 0.1)',
                 }}
                 title="Filter by priority"
@@ -36,7 +36,7 @@ const FilterButton = ({
 
             {showFilters && (
                 <div
-                    className="absolute right-0 mt-1 bg-black bg-opacity-50 rounded-lg p-2 backdrop-blur-md border border-white border-opacity-10 z-50"
+                    className="absolute right-0 mt-1 bg-black bg-opacity-50 rounded-lg p-2 border border-white border-opacity-10 z-50"
                     style={{ minWidth: '120px' }}
                 >
                     <div

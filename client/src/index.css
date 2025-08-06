@@ -53,27 +53,6 @@ button {
     -webkit-app-region: no-drag;
 }
 
-/* Enhanced backdrop blur for main app */
-.backdrop-blur-xl {
-    backdrop-filter: blur(24px);
-    -webkit-backdrop-filter: blur(24px);
-}
-
-.backdrop-blur-lg {
-    backdrop-filter: blur(16px);
-    -webkit-backdrop-filter: blur(16px);
-}
-
-.backdrop-blur-md {
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
-}
-
-.backdrop-blur-sm {
-    backdrop-filter: blur(4px);
-    -webkit-backdrop-filter: blur(4px);
-}
-
 @tailwind base;
 @tailwind components;
 @tailwind utilities;

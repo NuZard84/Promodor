@@ -353,7 +353,7 @@ const OverlayMode = () => {
                     onClick={resetTimer}
                     className="w-8 h-8 rounded-full bg-white bg-opacity-10 hover:bg-opacity-20 text-white text-opacity-60 hover:text-opacity-100 transition-all flex items-center justify-center"
                     style={{
-                        backdropFilter: 'blur(10px)',
+                      
                         border: '1px solid rgba(255, 255, 255, 0.1)',
                     }}
                 >
@@ -365,7 +365,7 @@ const OverlayMode = () => {
                     onClick={toggleTimer}
                     className="Bricolage_Grotesque px-5 text-xs rounded-full bg-white bg-opacity-15 hover:bg-opacity-25 text-white transition-all flex items-center justify-center"
                     style={{
-                        backdropFilter: 'blur(10px)',
+                    
                         border: '1px solid rgba(255, 255, 255, 0.15)',
                         boxShadow: '0 6px 24px rgba(0, 0, 0, 0.3)',
                     }}
@@ -384,7 +384,7 @@ const OverlayMode = () => {
                     onClick={openMainWindow}
                     className="hidden w-8 h-8 rounded-full bg-white bg-opacity-10 hover:bg-opacity-20 text-white text-opacity-60 hover:text-opacity-100 transition-all flex items-center justify-center"
                     style={{
-                        backdropFilter: 'blur(10px)',
+                     
                         border: '1px solid rgba(255, 255, 255, 0.1)',
                     }}
                 >
@@ -394,7 +394,7 @@ const OverlayMode = () => {
                     onClick={toggleNotesOverlay}
                     className="w-8 h-8 rounded-full bg-white bg-opacity-10 hover:bg-opacity-20 text-white text-opacity-60 hover:text-opacity-100 transition-all flex items-center justify-center"
                     style={{
-                        backdropFilter: 'blur(10px)',
+                  
                         border: '1px solid rgba(255, 255, 255, 0.1)',
                     }}
                 >

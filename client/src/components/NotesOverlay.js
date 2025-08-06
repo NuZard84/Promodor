@@ -43,8 +43,6 @@ const NotesOverlay = () => {
                 padding: '16px',
                 background: 'rgba(0, 0, 0, 0.5)',
                
-                WebkitBackdropFilter: 'blur(20px)',
-               
             }}
         >
             {/* Header */}
