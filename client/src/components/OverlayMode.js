@@ -13,16 +13,16 @@ import useGlobalShortcuts from '../hooks/useGlobalHooks'
 
 const OverlayMode = () => {
     // Timer state
-    const [minutes, setMinutes] = useState(25)
+    const [minutes, setMinutes] = useState(1)
     const [seconds, setSeconds] = useState(0)
     const [isActive, setIsActive] = useState(false)
     const [mode, setMode] = useState('focus')
-    const [cycle, setCycle] = useState(1)
+    const [cycle, setCycle] = useState(5)
     const [isClickThrough, setIsClickThrough] = useState(false)
 
     // Settings
     const [settings, setSettings] = useState({
-        focusTime: 25,
+        focusTime: 1,
         shortBreakTime: 5,
         longBreakTime: 15,
         longBreakAfter: 4,
@@ -50,6 +50,7 @@ const OverlayMode = () => {
 
     const handleTimerComplete = useCallback(() => {
         resetTimer()
+        disableHyperMode()
         if (mode === 'focus') {
             setCycle(cycle + 1)
         }
@@ -150,7 +151,12 @@ const OverlayMode = () => {
                 }
         }
     }
-    const { hyperMode } = useGlobalShortcuts()
+    const { hyperMode, enableHyperMode, disableHyperMode, toggleHyperMode } =
+        useGlobalShortcuts()
+
+    useEffect(() => {
+        console.log(hyperMode)
+    }, [hyperMode])
     const modeInfo = getModeInfo()
     const currentTimeInSeconds = minutes * 60 + seconds
 

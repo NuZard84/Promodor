@@ -1,5 +1,5 @@
 // useGlobalShortcuts.js - Updated Hook
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 
 const useGlobalShortcuts = () => {
     const [hyperMode, setHyperMode] = useState(false)
@@ -29,12 +29,33 @@ const useGlobalShortcuts = () => {
         }
     }, [])
 
-    const setToggleHyperMode = () => {
-        setHyperMode(!hyperMode)
-    }
+    const enableHyperMode = useCallback(() => {
+        console.log('Enabling hyperMode')
+        setHyperMode(true)
+    }, [])
+
+    const disableHyperMode = useCallback(() => {
+        console.log('Disabling hyperMode')
+        setHyperMode(false)
+    }, [])
+
+    const toggleHyperMode = useCallback(() => {
+        setHyperMode((prev) => {
+            const newValue = !prev
+            console.log(
+                'Manual toggle: Hypermode changing from',
+                prev,
+                'to',
+                newValue
+            )
+            return newValue
+        })
+    }, [])
     return {
         hyperMode,
-        setToggleHyperMode, // For testing
+        enableHyperMode, // For testing
+        disableHyperMode,
+        toggleHyperMode,
     }
 }
 
