@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react'
+import React, { useState, useEffect, useCallback, useRef } from 'react'
 import {
     Play,
     Pause,
@@ -8,8 +8,11 @@ import {
     Eye,
     NotepadTextIcon,
 } from 'lucide-react'
+import Lottie from 'lottie-react'
 import ModeSelector from './ModeSelector/ModeSelector'
 import useGlobalShortcuts from '../hooks/useGlobalHooks'
+import fireStreakAnimation from '../assets/animations/fire_streak.json'
+
 const OverlayMode = () => {
     // Timer state
     const [minutes, setMinutes] = useState(25)
@@ -19,6 +22,9 @@ const OverlayMode = () => {
     const [cycle, setCycle] = useState(0)
     const [isClickThrough, setIsClickThrough] = useState(false)
 
+    // Lottie animation ref
+    const lottieRef = useRef()
+
     // Settings
     const [settings, setSettings] = useState({
         focusTime: 25,
@@ -26,6 +32,19 @@ const OverlayMode = () => {
         longBreakTime: 15,
         longBreakAfter: 4,
     })
+
+    // Handle hover events for Lottie animation
+    const handleMouseEnter = () => {
+        if (lottieRef.current) {
+            lottieRef.current.play()
+        }
+    }
+
+    const handleMouseLeave = () => {
+        if (lottieRef.current) {
+            lottieRef.current.stop()
+        }
+    }
 
     // Timer logic
     useEffect(() => {
@@ -314,7 +333,9 @@ const OverlayMode = () => {
                                 <div className="flex flex-row items-center justify-center Bricolage_Grotesque">
                                     <button
                                         onClick={toggleStreakOverlay}
-                                        className="font-semibold hover:scale-105 transition-all cursor-pointer"
+                                        onMouseEnter={handleMouseEnter}
+                                        onMouseLeave={handleMouseLeave}
+                                        className="font-semibold transition-all cursor-pointer flex items-center"
                                         style={{
                                             color: '#FF6B47',
                                             WebkitAppRegion: 'no-drag',
@@ -322,9 +343,20 @@ const OverlayMode = () => {
                                         }}
                                         title="Open Streak Tracker"
                                     >
-                                        {cycle}⚡
+                                        <span className="mr-1">{cycle}</span>
+                                        <div className="w-[26px] h-[26px] mx-[-6px]">
+                                            <Lottie
+                                                lottieRef={lottieRef}
+                                                animationData={fireStreakAnimation}
+                                                loop={false}
+                                                autoplay={false}
+                                                onError={(error) => {
+                                                    console.error('Lottie animation error:', error)
+                                                }}
+                                            />
+                                        </div>
                                     </button>
-                                    <div className="h-[50%] w-[1.5px] bg-white/20 mr-2"></div>
+                                    <div className="h-[50%] w-[1.5px] bg-white/20 mr-2 ml-2"></div>
                                     <p
                                         className="font-semibold"
                                         style={{ color: '#FF6B47' }}
