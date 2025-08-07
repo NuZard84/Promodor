@@ -743,7 +743,7 @@ function createStreakOverlayWindow() {
 
     streakOverlayWindow = new BrowserWindow({
         width: 320,
-        height: 520,
+        height: 540, // Increased from 520 to 580
         frame: false,
         transparent: true,
         alwaysOnTop: true,
