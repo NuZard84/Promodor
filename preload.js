@@ -56,6 +56,18 @@ contextBridge.exposeInMainWorld('electronAPI', {
             ipcRenderer.removeListener(channel, callback)
         }
     },
+    createStreakOverlay: () => {
+        console.log('createStreakOverlay called from preload')
+        return ipcRenderer.invoke('create-streak-overlay')
+    },
+    closeStreakOverlay: () => {
+        console.log('closeStreakOverlay called from preload')
+        return ipcRenderer.invoke('close-streak-overlay')
+    },
+    toggleStreakOverlay: () => {
+        console.log('toggleStreakOverlay called from preload')
+        return ipcRenderer.invoke('toggle-streak-overlay')
+    },
 })
 
 console.log('electronAPI exposed to window')

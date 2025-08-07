@@ -22,4 +22,5 @@ export { NotesHeader, NotesInput, NotesList } from './Notes';
 
 // Overlay Components
 export { default as OverlayMode } from './OverlayMode';
-export { default as NotesOverlay } from './NotesOverlay'; 
+export { default as NotesOverlay } from './NotesOverlay';
+export { default as StreakOverlay } from './StreakOverlay';

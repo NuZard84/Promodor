@@ -113,6 +113,21 @@ const OverlayMode = () => {
         }
     }
 
+    // Add streak overlay handler
+    const toggleStreakOverlay = () => {
+        console.log('toggleStreakOverlay called')
+        console.log('electronAPI available:', !!window.electronAPI)
+        console.log('createStreakOverlay function:', typeof window.electronAPI?.createStreakOverlay)
+
+        if (window.electronAPI && window.electronAPI.createStreakOverlay) {
+            window.electronAPI.createStreakOverlay()
+                .then(() => console.log('Streak overlay created successfully'))
+                .catch(error => console.error('Error creating streak overlay:', error))
+        } else {
+            console.error('electronAPI or createStreakOverlay not available')
+        }
+    }
+
     // Get mode info
     const getModeInfo = () => {
         switch (mode) {
@@ -221,11 +236,10 @@ const OverlayMode = () => {
                 <div className="flex space-x-2">
                     <button
                         onClick={toggleClickThrough}
-                        className={`w-8 h-8 rounded-full transition-all flex items-center justify-center ${
-                            isClickThrough
-                                ? 'bg-blue-500 bg-opacity-80 text-white'
-                                : 'bg-white bg-opacity-10 hover:bg-opacity-20 text-white text-opacity-60 hover:text-opacity-100'
-                        }`}
+                        className={`w-8 h-8 rounded-full transition-all flex items-center justify-center ${isClickThrough
+                            ? 'bg-blue-500 bg-opacity-80 text-white'
+                            : 'bg-white bg-opacity-10 hover:bg-opacity-20 text-white text-opacity-60 hover:text-opacity-100'
+                            }`}
                         title="Toggle Click-through (Ctrl+Shift+C)"
                     >
                         <Eye size={14} />
@@ -298,15 +312,21 @@ const OverlayMode = () => {
                         <div className="flex space-x-2">
                             <>
                                 <div className="flex flex-row items-center justify-center Bricolage_Grotesque">
-                                    <p
-                                        className=" font-semibold"
-                                        style={{ color: '#FF6B47' }}
+                                    <button
+                                        onClick={toggleStreakOverlay}
+                                        className="font-semibold hover:scale-105 transition-all cursor-pointer"
+                                        style={{
+                                            color: '#FF6B47',
+                                            WebkitAppRegion: 'no-drag',
+                                            pointerEvents: isClickThrough ? 'none' : 'auto',
+                                        }}
+                                        title="Open Streak Tracker"
                                     >
                                         {cycle}⚡
-                                    </p>
+                                    </button>
                                     <div className="h-[50%] w-[1.5px] bg-white/20 mr-2"></div>
                                     <p
-                                        className=" font-semibold "
+                                        className="font-semibold"
                                         style={{ color: '#FF6B47' }}
                                     >
                                         {cycle * 25}⏱️
@@ -340,9 +360,8 @@ const OverlayMode = () => {
                 {/* Bottom Control Buttons */}
             </div>
             <div
-                className={`flex  justify-center gap-2 ${
-                    hyperMode ? 'hidden' : ''
-                }`}
+                className={`flex  justify-center gap-2 ${hyperMode ? 'hidden' : ''
+                    }`}
                 style={{
                     WebkitAppRegion: 'no-drag',
                     pointerEvents: isClickThrough ? 'none' : 'auto',
@@ -353,7 +372,7 @@ const OverlayMode = () => {
                     onClick={resetTimer}
                     className="w-8 h-8 rounded-full bg-white bg-opacity-10 hover:bg-opacity-20 text-white text-opacity-60 hover:text-opacity-100 transition-all flex items-center justify-center"
                     style={{
-                      
+
                         border: '1px solid rgba(255, 255, 255, 0.1)',
                     }}
                 >
@@ -365,7 +384,7 @@ const OverlayMode = () => {
                     onClick={toggleTimer}
                     className="Bricolage_Grotesque px-5 text-xs rounded-full bg-white bg-opacity-15 hover:bg-opacity-25 text-white transition-all flex items-center justify-center"
                     style={{
-                    
+
                         border: '1px solid rgba(255, 255, 255, 0.15)',
                         boxShadow: '0 6px 24px rgba(0, 0, 0, 0.3)',
                     }}
@@ -384,7 +403,7 @@ const OverlayMode = () => {
                     onClick={openMainWindow}
                     className="hidden w-8 h-8 rounded-full bg-white bg-opacity-10 hover:bg-opacity-20 text-white text-opacity-60 hover:text-opacity-100 transition-all flex items-center justify-center"
                     style={{
-                     
+
                         border: '1px solid rgba(255, 255, 255, 0.1)',
                     }}
                 >
@@ -394,7 +413,7 @@ const OverlayMode = () => {
                     onClick={toggleNotesOverlay}
                     className="w-8 h-8 rounded-full bg-white bg-opacity-10 hover:bg-opacity-20 text-white text-opacity-60 hover:text-opacity-100 transition-all flex items-center justify-center"
                     style={{
-                  
+
                         border: '1px solid rgba(255, 255, 255, 0.1)',
                     }}
                 >
@@ -402,7 +421,7 @@ const OverlayMode = () => {
                 </button>
             </div>
 
-           
+
             {/* Bottom Shortcut Hint */}
             <div
                 className="hidden text-center text-white text-opacity-30 text-xs mt-4"

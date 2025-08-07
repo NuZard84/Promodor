@@ -13,8 +13,9 @@ const isDev = require('electron-is-dev')
 const SHOW_DEVTOOLS_IN_PRODUCTION = false // Set to true to enable DevTools in production
 
 let mainWindow
-let overlayWindow
-let notesOverlayWindow
+let overlayWindow = null
+let notesOverlayWindow = null
+let streakOverlayWindow = null
 
 // At the top of main.js, add better path resolution
 const getPreloadPath = () => {
@@ -229,9 +230,9 @@ function createNotesOverlayWindow() {
     const startUrl = isDev
         ? 'http://localhost:3000#notes-overlay'
         : `file://${path.join(
-              __dirname,
-              'client/build/index.html'
-          )}#notes-overlay`
+            __dirname,
+            'client/build/index.html'
+        )}#notes-overlay`
 
     console.log('Loading notes overlay URL:', startUrl)
     notesOverlayWindow.loadURL(startUrl)
@@ -709,6 +710,86 @@ ipcMain.on('reset-timer', (event) => {
     }
 })
 
+// Add these IPC handlers with your existing ones
+ipcMain.handle('create-streak-overlay', () => {
+    console.log('IPC: create-streak-overlay called')
+    createStreakOverlayWindow()
+})
+
+ipcMain.handle('close-streak-overlay', () => {
+    console.log('IPC: close-streak-overlay called')
+    closeStreakOverlayWindow()
+})
+
+ipcMain.handle('toggle-streak-overlay', () => {
+    console.log('IPC: toggle-streak-overlay called')
+    if (streakOverlayWindow && !streakOverlayWindow.isDestroyed()) {
+        if (streakOverlayWindow.isVisible()) {
+            streakOverlayWindow.hide()
+        } else {
+            streakOverlayWindow.show()
+        }
+    } else {
+        createStreakOverlayWindow()
+    }
+})
+
+// Add the streak overlay window creation function
+function createStreakOverlayWindow() {
+    if (streakOverlayWindow && !streakOverlayWindow.isDestroyed()) {
+        streakOverlayWindow.focus()
+        return
+    }
+
+    streakOverlayWindow = new BrowserWindow({
+        width: 320,
+        height: 520,
+        frame: false,
+        transparent: true,
+        alwaysOnTop: true,
+        skipTaskbar: true,
+        resizable: false,
+        movable: true,
+        backgroundColor: '#00000000',
+        webPreferences: {
+            nodeIntegration: false,
+            contextIsolation: true,
+            preload: preloadPath,
+            enableWebGL: true,
+            experimentalFeatures: true,
+        },
+        hasShadow: false,
+        thickFrame: false,
+    })
+
+    const streakUrl = isDev
+        ? 'http://localhost:3000#streak-overlay'
+        : `file://${path.join(__dirname, 'client/build/index.html')}#streak-overlay`
+
+    console.log('Loading streak overlay URL:', streakUrl)
+    streakOverlayWindow.loadURL(streakUrl)
+
+    if (isDev || SHOW_DEVTOOLS_IN_PRODUCTION) {
+        streakOverlayWindow.webContents.openDevTools()
+    }
+
+    streakOverlayWindow.once('ready-to-show', () => {
+        streakOverlayWindow.show()
+        streakOverlayWindow.setBackgroundColor('#00000000')
+    })
+
+    streakOverlayWindow.on('closed', () => {
+        streakOverlayWindow = null
+    })
+}
+
+function closeStreakOverlayWindow() {
+    if (streakOverlayWindow && !streakOverlayWindow.isDestroyed()) {
+        streakOverlayWindow.close()
+        streakOverlayWindow = null
+    }
+}
+
 // App event handlers
 app.whenReady().then(() => {
     // Enable hardware acceleration for better performance
@@ -756,6 +837,9 @@ app.on('before-quit', () => {
     }
     if (notesOverlayWindow) {
         notesOverlayWindow.destroy()
+    }
+    if (streakOverlayWindow) {
+        streakOverlayWindow.destroy()
     }
 })
 

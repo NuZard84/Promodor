@@ -12,13 +12,15 @@ import {
   StatsCard,
   SettingsModal,
   OverlayMode,
-  NotesOverlay
+  NotesOverlay,
+  StreakOverlay
 } from './components';
 
 const App = () => {
   // Check if we're in overlay mode
   const isOverlayMode = window.location.hash === '#overlay';
   const isNotesOverlayMode = window.location.hash === '#notes-overlay';
+  const isStreakOverlayMode = window.location.hash === '#streak-overlay';
 
   // Initialize hooks
   const initialSettings = {
@@ -90,6 +92,10 @@ const App = () => {
 
   if (isNotesOverlayMode) {
     return <NotesOverlay />;
+  }
+
+  if (isStreakOverlayMode) {
+    return <StreakOverlay />;
   }
 
   return (
