@@ -33,7 +33,7 @@ const NotesOverlay = () => {
 
     return (
         <div
-            className="notes-overlay-container w-60 flex flex-col"
+            className="notes-overlay-container w-min flex flex-col"
             style={{
                 height: '80vh', // Changed from h-88 to explicit height
                 borderRadius: '20px',

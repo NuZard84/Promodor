@@ -71,14 +71,7 @@ code {
         monospace;
 }
 
-.notes-overlay-container {
-    display: flex;
-    flex-direction: column;
-    height: 80vh;
-    min-height: 300px;
-    max-height: 80vh;
-    overflow: hidden; /* Important! */
-}
+
 
 .custom-scrollbar::-webkit-scrollbar {
     width: 6px;

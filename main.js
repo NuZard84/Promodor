@@ -121,8 +121,8 @@ function createOverlayWindow() {
     console.log('Preload exists:', require('fs').existsSync(preloadPath))
 
     overlayWindow = new BrowserWindow({
-        width: 280,
-        height: 400,
+        width: 214,
+        height: 286,
         alwaysOnTop: true,
         skipTaskbar: true,
         resizable: false,
@@ -187,7 +187,6 @@ function createNotesOverlayWindow() {
 
     const platformConfig = {
         darwin: {
-            vibrancy: 'under-window',
             visualEffectState: 'active',
         },
         win32: {
@@ -202,7 +201,7 @@ function createNotesOverlayWindow() {
     const platformSettings = platformConfig[currentPlatform] || {}
 
     notesOverlayWindow = new BrowserWindow({
-        width: 320,
+        width: 220,
         height: 400,
         alwaysOnTop: true,
         skipTaskbar: true,
