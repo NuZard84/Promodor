@@ -230,9 +230,9 @@ function createNotesOverlayWindow() {
     const startUrl = isDev
         ? 'http://localhost:3000#notes-overlay'
         : `file://${path.join(
-            __dirname,
-            'client/build/index.html'
-        )}#notes-overlay`
+              __dirname,
+              'client/build/index.html'
+          )}#notes-overlay`
 
     console.log('Loading notes overlay URL:', startUrl)
     notesOverlayWindow.loadURL(startUrl)
@@ -733,23 +733,37 @@ ipcMain.handle('toggle-streak-overlay', () => {
         createStreakOverlayWindow()
     }
 })
-
-// Add the streak overlay window creation function
+// Replace your createStreakOverlayWindow function with this improved version
 function createStreakOverlayWindow() {
     if (streakOverlayWindow && !streakOverlayWindow.isDestroyed()) {
         streakOverlayWindow.focus()
         return
     }
 
+    const { screen } = require('electron')
+    const primaryDisplay = screen.getPrimaryDisplay()
+    const { width: screenWidth, height: screenHeight } =
+        primaryDisplay.workAreaSize
+
+    // Widget dimensions
+    const overlayWidth = 320
+    const overlayHeight = 120
+    const bottomPadding = 20
+
     streakOverlayWindow = new BrowserWindow({
-        width: 320,
-        height: 540, // Increased from 520 to 580
+        width: overlayWidth,
+        height: overlayHeight,
+        x: Math.round((screenWidth - overlayWidth) / 2),
+        y: screenHeight - overlayHeight - bottomPadding + 200,
         frame: false,
         transparent: true,
-        alwaysOnTop: true,
+        alwaysOnTop: false, // IMPORTANT: Start with false
         skipTaskbar: true,
         resizable: false,
-        movable: true,
+        movable: false,
+        minimizable: false,
+        maximizable: false,
+        closable: false,
         backgroundColor: '#00000000',
         webPreferences: {
             nodeIntegration: false,
@@ -760,11 +774,40 @@ function createStreakOverlayWindow() {
         },
         hasShadow: false,
         thickFrame: false,
+        focusable: false,
+        acceptFirstMouse: false,
+        roundedCorners: false,
+        show: false,
+        // Platform-specific window types for better desktop integration
+        ...(process.platform === 'win32' && {
+            type: 'desktop',
+            skipTaskbar: true,
+        }),
+        ...(process.platform === 'darwin' && {
+            level: 'desktop', // macOS desktop level
+            type: 'desktop',
+        }),
+        ...(process.platform === 'linux' && {
+            type: 'desktop',
+        }),
     })
+
+    // Immediately set to not be on top and make it desktop-level
+    streakOverlayWindow.setAlwaysOnTop(false)
+    streakOverlayWindow.setVisibleOnAllWorkspaces(true)
+
+    // Platform-specific desktop positioning
+    if (process.platform === 'darwin') {
+        // macOS: Set window level to be at desktop level
+        streakOverlayWindow.setLevel(0) // Desktop level
+    }
 
     const streakUrl = isDev
         ? 'http://localhost:3000#streak-overlay'
-        : `file://${path.join(__dirname, 'client/build/index.html')}#streak-overlay`
+        : `file://${path.join(
+              __dirname,
+              'client/build/index.html'
+          )}#streak-overlay`
 
     console.log('Loading streak overlay URL:', streakUrl)
     streakOverlayWindow.loadURL(streakUrl)
@@ -774,23 +817,166 @@ function createStreakOverlayWindow() {
     }
 
     streakOverlayWindow.once('ready-to-show', () => {
+        // Position correctly
+        repositionStreakOverlay()
+
+        // Show the window
         streakOverlayWindow.show()
         streakOverlayWindow.setBackgroundColor('#00000000')
+
+        // Ensure it doesn't steal focus
+        streakOverlayWindow.blur()
+
+        // Send to background immediately after showing
+        setTimeout(() => sendStreakOverlayToBackground(), 100)
+
+        // Additional safety check - send to background again after a delay
+        setTimeout(() => sendStreakOverlayToBackground(), 1000)
     })
 
     streakOverlayWindow.on('closed', () => {
         streakOverlayWindow = null
     })
+
+    // Prevent the window from ever becoming focused
+    streakOverlayWindow.on('focus', () => {
+        streakOverlayWindow.blur()
+        sendStreakOverlayToBackground()
+    })
+
+    // Handle screen size changes
+    const { screen: electronScreen } = require('electron')
+    electronScreen.on('display-metrics-changed', repositionStreakOverlay)
+    electronScreen.on('display-added', repositionStreakOverlay)
+    electronScreen.on('display-removed', repositionStreakOverlay)
 }
 
-function closeStreakOverlayWindow() {
-    if (streakOverlayWindow && !streakOverlayWindow.isDestroyed()) {
-        streakOverlayWindow.close()
-        streakOverlayWindow = null
+// Improved background positioning function
+function sendStreakOverlayToBackground() {
+    if (!streakOverlayWindow || streakOverlayWindow.isDestroyed()) return
+
+    console.log('Sending streak overlay to background...')
+
+    try {
+        // First, ensure it's not on top
+        streakOverlayWindow.setAlwaysOnTop(false)
+        streakOverlayWindow.blur()
+
+        if (process.platform === 'win32') {
+            // Windows: Use native APIs to send to bottom
+            try {
+                const hwnd = streakOverlayWindow.getNativeWindowHandle()
+                if (hwnd) {
+                    const { exec } = require('child_process')
+
+                    // Method 1: Use PowerShell to set window to bottom
+                    exec(
+                        `powershell -WindowStyle Hidden -Command "
+                        Add-Type -TypeDefinition '
+                            using System;
+                            using System.Runtime.InteropServices;
+                            public class Win32 {
+                                [DllImport(\\"user32.dll\\")]
+                                public static extern bool SetWindowPos(IntPtr hWnd, IntPtr hWndInsertAfter, int x, int y, int cx, int cy, uint uFlags);
+                                public static readonly IntPtr HWND_BOTTOM = new IntPtr(1);
+                                public const uint SWP_NOSIZE = 0x0001;
+                                public const uint SWP_NOMOVE = 0x0002;
+                                public const uint SWP_NOACTIVATE = 0x0010;
+                            }
+                        ';
+                        try {
+                            [Win32]::SetWindowPos([IntPtr]${
+                                hwnd.readBigUInt64LE
+                                    ? hwnd.readBigUInt64LE()
+                                    : hwnd
+                            }, [Win32]::HWND_BOTTOM, 0, 0, 0, 0, [Win32]::SWP_NOSIZE -bor [Win32]::SWP_NOMOVE -bor [Win32]::SWP_NOACTIVATE);
+                            Write-Host 'Window sent to bottom successfully';
+                        } catch {
+                            Write-Host 'Failed to set window position';
+                        }
+                    "`,
+                        (error, stdout, stderr) => {
+                            if (error) {
+                                console.log('PowerShell method failed:', error)
+                                // Fallback method
+                                setTimeout(() => {
+                                    streakOverlayWindow.setAlwaysOnTop(false)
+                                    streakOverlayWindow.blur()
+                                }, 100)
+                            } else {
+                                console.log('PowerShell output:', stdout)
+                            }
+                        }
+                    )
+                }
+            } catch (error) {
+                console.log('Native method failed:', error)
+                // Simple fallback
+                streakOverlayWindow.setAlwaysOnTop(false)
+                streakOverlayWindow.blur()
+            }
+        } else if (process.platform === 'darwin') {
+            // macOS: Set to lowest window level
+            streakOverlayWindow.setLevel(0) // Desktop level
+            console.log('Set macOS window to desktop level')
+        } else {
+            // Linux: Use standard methods
+            streakOverlayWindow.setAlwaysOnTop(false)
+            streakOverlayWindow.blur()
+            console.log('Applied Linux fallback positioning')
+        }
+    } catch (error) {
+        console.log('Error in sendStreakOverlayToBackground:', error)
+        // Ultimate fallback
+        streakOverlayWindow.setAlwaysOnTop(false)
+        streakOverlayWindow.blur()
     }
 }
 
-// App event handlers
+// Add this function to continuously ensure the window stays in background
+function maintainStreakOverlayPosition() {
+    if (!streakOverlayWindow || streakOverlayWindow.isDestroyed()) return
+
+    // Check every 5 seconds and ensure it's still in the background
+    setInterval(() => {
+        if (
+            streakOverlayWindow &&
+            !streakOverlayWindow.isDestroyed() &&
+            streakOverlayWindow.isVisible()
+        ) {
+            // Only reposition if the window somehow got on top
+            if (streakOverlayWindow.isAlwaysOnTop()) {
+                console.log(
+                    'Streak overlay detected on top, sending to background...'
+                )
+                sendStreakOverlayToBackground()
+            }
+        }
+    }, 5000) // Check every 5 seconds
+}
+function repositionStreakOverlay() {
+    if (!streakOverlayWindow || streakOverlayWindow.isDestroyed()) return
+
+    const { screen } = require('electron')
+    const primaryDisplay = screen.getPrimaryDisplay()
+    const { width: screenWidth, height: screenHeight } = primaryDisplay.workAreaSize
+
+    const overlayWidth = 320
+    const overlayHeight = 120
+    const bottomPadding = 20  
+
+    const newX = Math.round((screenWidth - overlayWidth) / 2)
+    const newY = screenHeight - overlayHeight - bottomPadding
+
+    streakOverlayWindow.setBounds({
+        x: newX,
+        y: newY,
+        width: overlayWidth,
+        height: overlayHeight,
+    })
+}
+
+// Update your app.whenReady() section
 app.whenReady().then(() => {
     // Enable hardware acceleration for better performance
     app.commandLine.appendSwitch('enable-hardware-acceleration')
@@ -809,7 +995,11 @@ app.whenReady().then(() => {
 
     createOverlayWindow() // Start with overlay instead of main window
     createNotesOverlayWindow() // Create notes window by default
+    createStreakOverlayWindow() // Create the bottom widget
     registerGlobalShortcuts()
+
+    // Start the position maintenance system
+    setTimeout(() => maintainStreakOverlayPosition(), 2000)
 
     // Handle app activation (macOS)
     app.on('activate', () => {
@@ -819,54 +1009,20 @@ app.whenReady().then(() => {
     })
 })
 
-app.on('window-all-closed', () => {
-    if (process.platform !== 'darwin') {
-        app.quit()
-    }
-})
-
-app.on('will-quit', () => {
-    // Unregister all global shortcuts
-    globalShortcut.unregisterAll()
-})
-
-app.on('before-quit', () => {
-    // Clean up any resources
-    if (overlayWindow) {
-        overlayWindow.destroy()
-    }
-    if (notesOverlayWindow) {
-        notesOverlayWindow.destroy()
-    }
-    if (streakOverlayWindow) {
-        streakOverlayWindow.destroy()
-    }
-})
-
-// Security: Prevent new window creation
-app.on('web-contents-created', (event, contents) => {
-    contents.on('new-window', (event, navigationUrl) => {
-        event.preventDefault()
-        // You could open in default browser here if needed
-        // require('electron').shell.openExternal(navigationUrl);
-    })
-})
-
-// Auto-updater (for production)
-if (!isDev) {
-    const { autoUpdater } = require('electron-updater')
-
-    autoUpdater.checkForUpdatesAndNotify()
-
-    autoUpdater.on('update-available', () => {
-        if (mainWindow) {
-            mainWindow.webContents.send('update-available')
-        }
-    })
-
-    autoUpdater.on('update-downloaded', () => {
-        if (mainWindow) {
-            mainWindow.webContents.send('update-downloaded')
+// Update the global shortcut for streak overlay
+function updateGlobalShortcuts() {
+    // Add this to your registerGlobalShortcuts function
+    globalShortcut.register('CmdOrCtrl+Shift+T', () => {
+        console.log('Streak overlay toggle triggered')
+        if (streakOverlayWindow && !streakOverlayWindow.isDestroyed()) {
+            if (streakOverlayWindow.isVisible()) {
+                streakOverlayWindow.hide()
+            } else {
+                streakOverlayWindow.show()
+                setTimeout(() => sendStreakOverlayToBackground(), 100)
+            }
+        } else {
+            createStreakOverlayWindow()
         }
     })
 }
