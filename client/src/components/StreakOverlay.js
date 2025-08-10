@@ -105,21 +105,31 @@ const StreakOverlay = () => {
 
             {/* Compact Stats Cards */}
             <div className="flex  flex-shrink-0 items-center justify-center gap-4">
-                <div className="min-w-20 bg-white/10 h-24 justify-center flex  flex-col rounded-xl p-2 text-center">
+                <div className="min-w-20 bg-white/10 h-full justify-center flex  flex-col rounded-xl p-2 text-center">
                     <div className="text-4xl font-bold text-white">
-                        <div className="relative rounded-full">
+                        {/* <div className="relative rounded-full">
                             <Flame
-                                size={18}
+                                size={14}
+                                className="text-orange-500 fill-red-300 mx-auto mb-1 "
+                            />
+                        </div> */}
+                        {streakData.currentStreak || 0} 
+                    </div>
+                    <div className={`flex flex-row gap-1 items-center ${streakData.currentStreak > 10 ?"":"justify-center"}`}>
+                        <div className={`relative rounded-full ${streakData.currentStreak > 10 ?"":"hidden"}` }>
+                            <Flame
+                                size={22}
                                 className="text-orange-500 fill-red-300 mx-auto mb-1 "
                             />
                         </div>
-                        {streakData.currentStreak}
-                    </div>
-                    <div className="text-white/60 text-[10px] leading-tight">
-                        Current
-                    </div>
-                    <div className="text-white/60 text-[10px] leading-tight">
-                        Streak
+                        <div className={` flex flex-col ${streakData.currentStreak > 10 ?"item-start":"item-center"}`}>
+                            <div className="text-white/60 text-[10px] leading-tight">
+                                Current
+                            </div>
+                            <div className="text-white/60 text-[10px] leading-tight">
+                                Streak
+                            </div>
+                        </div>
                     </div>
                 </div>
 
@@ -188,7 +198,7 @@ const StreakOverlay = () => {
                                         >
                                             {day}
                                         </div>
-                                        {index % 1 ==  0 ? (
+                                        {index % 1 == 0 ? (
                                             <div className="w-6 h-6 rounded-full bg-orange-600 flex justify-center items-center">
                                                 <Flame
                                                     className="text-white/70 fill-orange-700"
