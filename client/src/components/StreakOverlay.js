@@ -104,16 +104,21 @@ const StreakOverlay = () => {
             </div>
 
             {/* Compact Stats Cards */}
-            <div className="flex gap-2 flex-shrink-0 items-center">
-                <div className="min-w-20 bg-white/10 rounded-lg p-2 text-center">
-                    <Flame size={14} className="text-orange-500 mx-auto mb-1" />
-                    <div className="text-lg font-bold text-white">
+            <div className="flex  flex-shrink-0 items-center justify-center gap-4">
+                <div className="min-w-20 bg-white/10 h-24 justify-center flex  flex-col rounded-xl p-2 text-center">
+                    <div className="text-4xl font-bold text-white">
+                        <div className="relative rounded-full">
+                            <Flame
+                                size={18}
+                                className="text-orange-500 fill-red-300 mx-auto mb-1 "
+                            />
+                        </div>
                         {streakData.currentStreak}
                     </div>
-                    <div className="text-white/60 text-xs leading-tight">
+                    <div className="text-white/60 text-[10px] leading-tight">
                         Current
                     </div>
-                    <div className="text-white/60 text-xs leading-tight">
+                    <div className="text-white/60 text-[10px] leading-tight">
                         Streak
                     </div>
                 </div>
@@ -165,15 +170,37 @@ const StreakOverlay = () => {
                     </div>
                     <div className="grid grid-cols-7 gap-1 mb-2 flex-shrink-0">
                         {['S', 'M', 'T', 'W', 'T', 'F', 'S'].map(
-                            (day, index) => (
-                                <div
-                                    key={index}
-                                    className="flex flex-col text-center text-white/50 text-xs py-1 font-medium"
-                                >
-                                    <div>{day}</div>
-                                    <div className="w-6 h-6 rounded-full bg-orange-500/20">{}</div>
-                                </div>
-                            )
+                            (day, index) => {
+                                const today = new Date().getDay() // 0 = Sunday, 1 = Monday, etc.
+                                const isToday = index === today
+
+                                return (
+                                    <div
+                                        key={index}
+                                        className="flex flex-col text-center py-1 font-medium"
+                                    >
+                                        <div
+                                            className={`text-xs ${
+                                                isToday
+                                                    ? 'text-white'
+                                                    : 'text-white/50'
+                                            }`}
+                                        >
+                                            {day}
+                                        </div>
+                                        {index % 1 ==  0 ? (
+                                            <div className="w-6 h-6 rounded-full bg-orange-600 flex justify-center items-center">
+                                                <Flame
+                                                    className="text-white/70 fill-orange-700"
+                                                    size={18}
+                                                />
+                                            </div>
+                                        ) : (
+                                            <div className="w-6 h-6 rounded-full bg-orange-500/20"></div>
+                                        )}
+                                    </div>
+                                )
+                            }
                         )}
                     </div>
                 </div>
