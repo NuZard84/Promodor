@@ -1,7 +1,5 @@
-import React, { useState, useEffect, useCallback, useRef } from 'react'
+import React, { useState, useEffect, useRef } from 'react'
 import {
-    Play,
-    Pause,
     RotateCcw,
     Settings,
     X,
@@ -12,12 +10,13 @@ import Lottie from 'lottie-react'
 import ModeSelector from './ModeSelector/ModeSelector'
 import useGlobalShortcuts from '../hooks/useGlobalHooks'
 import fireStreakAnimation from '../assets/animations/fire_streak.json'
+import { completeFocusCycleToday } from '../utils/streak'
 
 // Simple editable timer values (change here to test quickly)
 const FOCUS_MIN = 1
 const SHORT_BREAK_MIN = 1
 const LONG_BREAK_MIN = 1
-const LONG_BREAK_AFTER = 1
+// const LONG_BREAK_AFTER = 1
 
 // const FOCUS_MIN = 25
 // const SHORT_BREAK_MIN = 5
@@ -67,19 +66,20 @@ const OverlayMode = () => {
             }, 1000)
         }
         return () => clearInterval(interval)
-    }, [isActive, seconds, minutes])
+    }, [isActive, seconds, minutes, handleTimerComplete])
 
-    const handleTimerComplete = () => {
+    function handleTimerComplete() {
         const wasFocus = mode === 'focus'
         resetTimer()
         disableHyperMode()
         if (wasFocus) {
             setCycle((prev) => prev + 1)
+            try { completeFocusCycleToday() } catch {}
         }
     }
 
     const toggleTimer = () => setIsActive(!isActive)
-    const resetTimer = () => {
+    function resetTimer() {
         setIsActive(false)
         if (mode === 'focus') {
             setMode('shortBreak')
@@ -120,7 +120,7 @@ const OverlayMode = () => {
         return () => {
             delete window.toggleClickThroughFromShortcut
         }
-    }, [isClickThrough])
+    }, [isClickThrough, toggleClickThrough])
 
     const formatTime = (mins, secs) => {
         return `${String(mins).padStart(2, '0')}:${String(secs).padStart(
@@ -187,7 +187,7 @@ const OverlayMode = () => {
                 }
         }
     }
-    const { hyperMode, enableHyperMode, disableHyperMode, toggleHyperMode } =
+    const { hyperMode, disableHyperMode } =
         useGlobalShortcuts()
 
     useEffect(() => {
@@ -206,7 +206,6 @@ const OverlayMode = () => {
 
     // Fixed stroke calculation: start with full circumference (no progress)
     // As progress increases, reduce the dash offset to fill the circle
-    const strokeDashoffset = circumference - (progress / 100) * circumference
     const handleModeChange = (newMode) => {
         setMode(newMode)
         setIsActive(false)
