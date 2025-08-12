@@ -134,10 +134,10 @@ const StreakOverlay = () => {
                                 className="text-orange-500 fill-red-300 mx-auto mb-1 "
                             />
                         </div> */}
-                        {streakData.currentStreak || 0} 
+                        {currentStreak || 0} 
                     </div>
-                    <div className={`flex flex-row gap-1 items-center ${streakData.currentStreak > 10 ?"":"justify-center"}`}>
-                        <div className={`relative rounded-full ${streakData.currentStreak > 10 ?"":"hidden"}` }>
+                    <div className={`flex flex-row gap-1 items-center ${currentStreak > 10 ?"":"justify-center"}`}>
+                        <div className={`relative rounded-full ${currentStreak > 10 ?"":"hidden"}` }>
                             <Flame
                                 size={22}
                                 className="text-orange-500 fill-red-300 mx-auto mb-1 "
@@ -194,6 +194,23 @@ const StreakOverlay = () => {
                         </div>
                     </div>
                     <div className="grid grid-cols-7 gap-1 mb-2 flex-shrink-0">
+                        {weekInfo.days.map((d, index) => {
+                            const label = ['S','M','T','W','T','F','S'][index]
+                            const isToday = d.isToday
+                            const completed = d.completed
+                            return (
+                                <div key={d.key} className="flex flex-col text-center py-1 font-medium">
+                                    <div className={`text-xs ${isToday ? 'text-white' : 'text-white/50'}`}>{label}</div>
+                                    {completed ? (
+                                        <div className={`w-6 h-6 rounded-full ${isToday ? 'bg-orange-600' : 'bg-orange-500/80'} flex justify-center items-center`}>
+                                            <Flame className="text-white/70 fill-orange-700" size={18} />
+                                        </div>
+                                    ) : (
+                                        <div className={`w-6 h-6 rounded-full ${isToday ? 'bg-white/30' : 'bg-orange-500/20'}`}></div>
+                                    )}
+                                </div>
+                            )
+                        })}
                         {['S', 'M', 'T', 'W', 'T', 'F', 'S'].map(
                             (day, index) => {
                                 const today = new Date().getDay() // 0 = Sunday, 1 = Monday, etc.
@@ -213,7 +230,7 @@ const StreakOverlay = () => {
                                         >
                                             {day}
                                         </div>
-                                        {index % 1 ==  0 ? (
+                                        {index % 1 == 0 ? (
                                             <div className="w-6 h-6 rounded-full bg-orange-600 flex justify-center items-center">
                                                 <Flame
                                                     className="text-white/70 fill-orange-700"
