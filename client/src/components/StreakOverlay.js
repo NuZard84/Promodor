@@ -1,15 +1,13 @@
-import React, { useState } from 'react'
+import React, { useEffect, useState } from 'react'
 import { X, Eye, Flame, Calendar, Target, TrendingUp } from 'lucide-react'
+import { ensureRolloverNow, getCurrentWeekInfo, getCurrentStreak, getWeeklyCycleCount, onLocalMidnight } from '../utils/streak'
 
 const StreakOverlay = () => {
     const [isClickThrough, setIsClickThrough] = useState(false)
-    const [streakData] = useState({
-        currentStreak: 7,
-        longestStreak: 15,
-        totalSessions: 142,
-        weeklyGoal: 25,
-        completedThisWeek: 18,
-    })
+    const WEEKLY_GOAL = 28
+    const [currentStreak, setCurrentStreak] = useState(0)
+    const [weekInfo, setWeekInfo] = useState(() => getCurrentWeekInfo())
+    const [weeklyCycleCount, setWeeklyCycleCount] = useState(() => getWeeklyCycleCount())
 
     const toggleClickThrough = () => {
         const newState = !isClickThrough
@@ -25,7 +23,7 @@ const StreakOverlay = () => {
         }
     }
 
-    // Generate calendar for current month
+    // Generate calendar for current month (placeholder/mock)
     const generateCalendarDays = () => {
         const today = new Date()
         const currentMonth = today.getMonth()
@@ -53,8 +51,31 @@ const StreakOverlay = () => {
     }
 
     const calendarDays = generateCalendarDays()
-    const weeklyProgress =
-        (streakData.completedThisWeek / streakData.weeklyGoal) * 100
+    const weeklyProgress = (weeklyCycleCount / WEEKLY_GOAL) * 100
+
+    useEffect(() => {
+        const refresh = () => {
+            ensureRolloverNow()
+            setCurrentStreak(getCurrentStreak())
+            setWeekInfo(getCurrentWeekInfo())
+            setWeeklyCycleCount(getWeeklyCycleCount())
+        }
+        // Initial
+        refresh()
+        // At local midnight
+        const cancelMidnight = onLocalMidnight(refresh)
+        // When any other window updates storage
+        const onStorage = (e) => {
+            if (!e || e.key == null || e.key === 'promodor_streak_v1') {
+                refresh()
+            }
+        }
+        window.addEventListener('storage', onStorage)
+        return () => {
+            cancelMidnight && cancelMidnight()
+            window.removeEventListener('storage', onStorage)
+        }
+    }, [])
 
     return (
         <div
@@ -122,22 +143,19 @@ const StreakOverlay = () => {
                                 className="text-orange-500 fill-red-300 mx-auto mb-1 "
                             />
                         </div>
-                        <div className={` flex flex-col ${streakData.currentStreak > 10 ?"item-start":"item-center"}`}>
-                            <div className="text-white/60 text-[10px] leading-tight">
-                                Current
-                            </div>
-                            <div className="text-white/60 text-[10px] leading-tight">
-                                Streak
-                            </div>
-                        </div>
+                        {currentStreak}
+                    </div>
+                    <div className="text-white/60 text-[10px] leading-tight">
+                        Current
+                    </div>
+                    <div className="text-white/60 text-[10px] leading-tight">
+                        Streak
                     </div>
                 </div>
 
                 <div className="hidden bg-white/10 rounded-lg p-2 text-center">
                     <Target size={14} className="text-green-500 mx-auto mb-1" />
-                    <div className="text-lg font-bold text-white">
-                        {streakData.longestStreak}
-                    </div>
+                    <div className="text-lg font-bold text-white">0</div>
                     <div className="text-white/60 text-xs leading-tight">
                         Best Streak
                     </div>
@@ -148,9 +166,7 @@ const StreakOverlay = () => {
                         size={14}
                         className="text-blue-500 mx-auto mb-1"
                     />
-                    <div className="text-lg font-bold text-white">
-                        {streakData.totalSessions}
-                    </div>
+                    <div className="text-lg font-bold text-white">0</div>
                     <div className="text-white/60 text-xs leading-tight">
                         Total
                     </div>
@@ -165,8 +181,7 @@ const StreakOverlay = () => {
                                 Weekly Goal
                             </span>
                             <span className="text-white/80 text-sm font-medium">
-                                {streakData.completedThisWeek}/
-                                {streakData.weeklyGoal}
+                                {weeklyCycleCount}/{WEEKLY_GOAL}
                             </span>
                         </div>
                         <div className="w-full bg-white/10 rounded-full h-2">
@@ -198,7 +213,7 @@ const StreakOverlay = () => {
                                         >
                                             {day}
                                         </div>
-                                        {index % 1 == 0 ? (
+                                        {index % 1 ==  0 ? (
                                             <div className="w-6 h-6 rounded-full bg-orange-600 flex justify-center items-center">
                                                 <Flame
                                                     className="text-white/70 fill-orange-700"
