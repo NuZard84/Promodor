@@ -13,9 +13,20 @@ import ModeSelector from './ModeSelector/ModeSelector'
 import useGlobalShortcuts from '../hooks/useGlobalHooks'
 import fireStreakAnimation from '../assets/animations/fire_streak.json'
 
+// Simple editable timer values (change here to test quickly)
+const FOCUS_MIN = 1
+const SHORT_BREAK_MIN = 1
+const LONG_BREAK_MIN = 1
+const LONG_BREAK_AFTER = 1
+
+// const FOCUS_MIN = 25
+// const SHORT_BREAK_MIN = 5
+// const LONG_BREAK_MIN = 15
+// const LONG_BREAK_AFTER = 4
+
 const OverlayMode = () => {
     // Timer state
-    const [minutes, setMinutes] = useState(25)
+    const [minutes, setMinutes] = useState(FOCUS_MIN)
     const [seconds, setSeconds] = useState(0)
     const [isActive, setIsActive] = useState(false)
     const [mode, setMode] = useState('focus')
@@ -24,14 +35,6 @@ const OverlayMode = () => {
 
     // Lottie animation ref
     const lottieRef = useRef()
-
-    // Settings
-    const [settings, setSettings] = useState({
-        focusTime: 25,
-        shortBreakTime: 5,
-        longBreakTime: 15,
-        longBreakAfter: 4,
-    })
 
     // Handle hover events for Lottie animation
     const handleMouseEnter = () => {
@@ -66,27 +69,27 @@ const OverlayMode = () => {
         return () => clearInterval(interval)
     }, [isActive, seconds, minutes])
 
-    const handleTimerComplete = useCallback(() => {
+    const handleTimerComplete = () => {
+        const wasFocus = mode === 'focus'
         resetTimer()
         disableHyperMode()
-        if (mode === 'focus') {
-            setCycle(cycle + 1)
+        if (wasFocus) {
+            setCycle((prev) => prev + 1)
         }
-        // Handle mode switching logic here
-    }, [mode, cycle, settings])
+    }
 
     const toggleTimer = () => setIsActive(!isActive)
     const resetTimer = () => {
         setIsActive(false)
         if (mode === 'focus') {
             setMode('shortBreak')
-            setMinutes(settings.shortBreakTime)
+            setMinutes(SHORT_BREAK_MIN)
         } else if (mode === 'shortBreak') {
             setMode('focus')
-            setMinutes(settings.focusTime)
+            setMinutes(FOCUS_MIN)
         } else {
             setMode('focus')
-            setMinutes(settings.focusTime)
+            setMinutes(FOCUS_MIN)
         }
         setSeconds(0)
     }
@@ -156,7 +159,7 @@ const OverlayMode = () => {
                     color: '#FF6B47',
                     glowColor: 'rgba(255, 107, 71, 0.4)',
                     icon: '👁️',
-                    totalTime: settings.focusTime * 60,
+                    totalTime: FOCUS_MIN * 60,
                 }
             case 'shortBreak':
                 return {
@@ -164,7 +167,7 @@ const OverlayMode = () => {
                     color: '#4ECDC4',
                     glowColor: 'rgba(78, 205, 196, 0.4)',
                     icon: '☕',
-                    totalTime: settings.shortBreakTime * 60,
+                    totalTime: SHORT_BREAK_MIN * 60,
                 }
             case 'longBreak':
                 return {
@@ -172,7 +175,7 @@ const OverlayMode = () => {
                     color: '#5D7D9A',
                     glowColor: 'rgba(78, 205, 196, 0.9)',
                     icon: '🛋️',
-                    totalTime: settings.longBreakTime * 60,
+                    totalTime: LONG_BREAK_MIN * 60,
                 }
             default:
                 return {
@@ -180,7 +183,7 @@ const OverlayMode = () => {
                     color: '#FF6B47',
                     glowColor: 'rgba(255, 107, 71, 0.4)',
                     icon: '👁️',
-                    totalTime: settings.focusTime * 60,
+                    totalTime: FOCUS_MIN * 60,
                 }
         }
     }
@@ -208,19 +211,19 @@ const OverlayMode = () => {
         setMode(newMode)
         setIsActive(false)
 
-        // Reset timer based on new mode
+        // Reset timer based on new mode using simple constants
         switch (newMode) {
             case 'focus':
-                setMinutes(settings.focusTime)
+                setMinutes(FOCUS_MIN)
                 break
             case 'shortBreak':
-                setMinutes(settings.shortBreakTime)
+                setMinutes(SHORT_BREAK_MIN)
                 break
             case 'longBreak':
-                setMinutes(settings.longBreakTime)
+                setMinutes(LONG_BREAK_MIN)
                 break
             default:
-                setMinutes(settings.focusTime)
+                setMinutes(FOCUS_MIN)
         }
         setSeconds(0)
     }
@@ -361,7 +364,7 @@ const OverlayMode = () => {
                                         className="font-semibold"
                                         style={{ color: '#FF6B47' }}
                                     >
-                                        {cycle * 25}⏱️
+                                        {cycle * FOCUS_MIN}⏱️
                                     </p>
                                 </div>
                             </>
