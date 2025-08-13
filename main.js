@@ -745,19 +745,17 @@ function createStreakOverlayWindow() {
     const { width: screenWidth, height: screenHeight } =
         primaryDisplay.workAreaSize
 
-    // Widget dimensions
-    const overlayWidth = 320
-    const overlayHeight = 120
     const bottomPadding = 20
 
+    // Start tiny — will resize after render
     streakOverlayWindow = new BrowserWindow({
-        width: overlayWidth,
-        height: overlayHeight,
-        x: Math.round((screenWidth - overlayWidth) / 2),
-        y: screenHeight - overlayHeight - bottomPadding + 200,
+        width: 200,
+        height: 100,
+        x: Math.round((screenWidth - 200) / 2),
+        y: screenHeight - 100 - bottomPadding,
         frame: false,
         transparent: true,
-        alwaysOnTop: false, // IMPORTANT: Start with false
+        alwaysOnTop: false,
         skipTaskbar: true,
         resizable: false,
         movable: false,
@@ -766,9 +764,9 @@ function createStreakOverlayWindow() {
         closable: false,
         backgroundColor: '#00000000',
         webPreferences: {
+            preload: preloadPath,
             nodeIntegration: false,
             contextIsolation: true,
-            preload: preloadPath,
             enableWebGL: true,
             experimentalFeatures: true,
         },
@@ -778,29 +776,10 @@ function createStreakOverlayWindow() {
         acceptFirstMouse: false,
         roundedCorners: false,
         show: false,
-        // Platform-specific window types for better desktop integration
-        ...(process.platform === 'win32' && {
-            type: 'desktop',
-            skipTaskbar: true,
-        }),
-        ...(process.platform === 'darwin' && {
-            level: 'desktop', // macOS desktop level
-            type: 'desktop',
-        }),
-        ...(process.platform === 'linux' && {
-            type: 'desktop',
-        }),
     })
 
-    // Immediately set to not be on top and make it desktop-level
     streakOverlayWindow.setAlwaysOnTop(false)
     streakOverlayWindow.setVisibleOnAllWorkspaces(true)
-
-    // Platform-specific desktop positioning
-    if (process.platform === 'darwin') {
-        // macOS: Set window level to be at desktop level
-        streakOverlayWindow.setLevel(0) // Desktop level
-    }
 
     const streakUrl = isDev
         ? 'http://localhost:3000#streak-overlay'
@@ -809,7 +788,6 @@ function createStreakOverlayWindow() {
               'client/build/index.html'
           )}#streak-overlay`
 
-    console.log('Loading streak overlay URL:', streakUrl)
     streakOverlayWindow.loadURL(streakUrl)
 
     if (isDev || SHOW_DEVTOOLS_IN_PRODUCTION) {
@@ -817,20 +795,10 @@ function createStreakOverlayWindow() {
     }
 
     streakOverlayWindow.once('ready-to-show', () => {
-        // Position correctly
-        repositionStreakOverlay()
-
-        // Show the window
         streakOverlayWindow.show()
         streakOverlayWindow.setBackgroundColor('#00000000')
-
-        // Ensure it doesn't steal focus
         streakOverlayWindow.blur()
-
-        // Send to background immediately after showing
         setTimeout(() => sendStreakOverlayToBackground(), 100)
-
-        // Additional safety check - send to background again after a delay
         setTimeout(() => sendStreakOverlayToBackground(), 1000)
     })
 
@@ -838,17 +806,16 @@ function createStreakOverlayWindow() {
         streakOverlayWindow = null
     })
 
-    // Prevent the window from ever becoming focused
-    streakOverlayWindow.on('focus', () => {
-        streakOverlayWindow.blur()
-        sendStreakOverlayToBackground()
+    // Listen for renderer's size measurement
+    const { ipcMain } = require('electron')
+    ipcMain.once('overlay-size', (event, { width, height }) => {
+        streakOverlayWindow.setBounds({
+            x: Math.round((screenWidth - width) / 2),
+            y: screenHeight - height - bottomPadding,
+            width,
+            height,
+        })
     })
-
-    // Handle screen size changes
-    const { screen: electronScreen } = require('electron')
-    electronScreen.on('display-metrics-changed', repositionStreakOverlay)
-    electronScreen.on('display-added', repositionStreakOverlay)
-    electronScreen.on('display-removed', repositionStreakOverlay)
 }
 
 // Improved background positioning function
@@ -959,11 +926,12 @@ function repositionStreakOverlay() {
 
     const { screen } = require('electron')
     const primaryDisplay = screen.getPrimaryDisplay()
-    const { width: screenWidth, height: screenHeight } = primaryDisplay.workAreaSize
+    const { width: screenWidth, height: screenHeight } =
+        primaryDisplay.workAreaSize
 
-    const overlayWidth = 320
+    const overlayWidth = 502
     const overlayHeight = 120
-    const bottomPadding = 20  
+    const bottomPadding = 20
 
     const newX = Math.round((screenWidth - overlayWidth) / 2)
     const newY = screenHeight - overlayHeight - bottomPadding

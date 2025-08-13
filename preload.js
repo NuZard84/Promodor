@@ -68,6 +68,8 @@ contextBridge.exposeInMainWorld('electronAPI', {
         console.log('toggleStreakOverlay called from preload')
         return ipcRenderer.invoke('toggle-streak-overlay')
     },
+
+    sendOverlaySize: (size) => ipcRenderer.send('overlay-size', size),
 })
 
 console.log('electronAPI exposed to window')
