@@ -583,12 +583,19 @@ ipcMain.handle('toggle-click-through', (event, enabled) => {
 })
 
 ipcMain.handle('show-notification', (event, options) => {
-    if (Notification.isSupported()) {
+    try {
+        console.log('IPC: show-notification', options)
+        if (!Notification.isSupported()) {
+            console.log('Notifications not supported on this platform/session')
+            return false
+        }
+
         const notification = new Notification({
-            title: options.title,
-            body: options.body,
+            title: options?.title || 'Notification',
+            body: options?.body || '',
             icon: path.join(__dirname, 'assets/icon.png'),
-            sound: true,
+            // use Electron's silent flag; there is no sound option
+            silent: false,
         })
 
         notification.show()
@@ -598,6 +605,10 @@ ipcMain.handle('show-notification', (event, options) => {
                 mainWindow.focus()
             }
         })
+        return true
+    } catch (err) {
+        console.log('Error showing notification:', err)
+        return false
     }
 })
 
@@ -978,6 +989,15 @@ function repositionStreakOverlay() {
 
 // Update your app.whenReady() section
 app.whenReady().then(() => {
+    // Ensure Windows notifications work in development by setting an AppUserModelID
+    if (process.platform === 'win32') {
+        try {
+            app.setAppUserModelId('com.promodor.app')
+        } catch (err) {
+            console.log('Failed to set AppUserModelID:', err)
+        }
+    }
+
     // Enable hardware acceleration for better performance
     app.commandLine.appendSwitch('enable-hardware-acceleration')
     app.commandLine.appendSwitch('enable-features', 'VaapiVideoDecoder')

@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
+import useNotifier from './useNotifier';
 
 const useTimer = (initialSettings) => {
   const [minutes, setMinutes] = useState(initialSettings.focusTime);
@@ -7,6 +8,7 @@ const useTimer = (initialSettings) => {
   const [mode, setMode] = useState('focus');
   const [cycle, setCycle] = useState(1);
   const [settings, setSettings] = useState(initialSettings);
+  const notify = useNotifier();
 
   // Timer logic
   useEffect(() => {
@@ -35,17 +37,21 @@ const useTimer = (initialSettings) => {
       if (cycle % settings.longBreakAfter === 0) {
         setMode('longBreak');
         setMinutes(settings.longBreakTime);
+        notify('Focus complete', `Time for a long break (${settings.longBreakTime} min).`);
       } else {
         setMode('shortBreak');
         setMinutes(settings.shortBreakTime);
+        notify('Focus complete', `Time for a short break (${settings.shortBreakTime} min).`);
       }
     } else {
       setMode('focus');
       setMinutes(settings.focusTime);
       if (mode === 'longBreak') {
         setCycle(1);
+        notify('Long break over', 'Back to focus!');
       } else {
         setCycle(prev => prev + 1);
+        notify('Short break over', 'Back to focus!');
       }
     }
 

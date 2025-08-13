@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react'
+import useNotifier from '../hooks/useNotifier'
 import {
     RotateCcw,
     Settings,
@@ -35,6 +36,8 @@ const OverlayMode = () => {
     // Lottie animation ref
     const lottieRef = useRef()
 
+	const notify = useNotifier()
+
     // Handle hover events for Lottie animation
     const handleMouseEnter = () => {
         if (lottieRef.current) {
@@ -68,15 +71,24 @@ const OverlayMode = () => {
         return () => clearInterval(interval)
     }, [isActive, seconds, minutes, handleTimerComplete])
 
-    function handleTimerComplete() {
-        const wasFocus = mode === 'focus'
-        resetTimer()
-        disableHyperMode()
-        if (wasFocus) {
-            setCycle((prev) => prev + 1)
-            try { completeFocusCycleToday() } catch {}
-        }
-    }
+	function handleTimerComplete() {
+		const prevMode = mode
+		const wasFocus = mode === 'focus'
+		resetTimer()
+		disableHyperMode()
+		if (wasFocus) {
+			setCycle((prev) => prev + 1)
+			try { completeFocusCycleToday() } catch {}
+			// Focus just completed → going to short break (by design here)
+			notify('Focus complete', `Time for a short break (${SHORT_BREAK_MIN} min).`)
+		} else if (prevMode === 'shortBreak') {
+			// Short break ended → back to focus
+			notify('Short break over', 'Back to focus!')
+		} else if (prevMode === 'longBreak') {
+			// Long break ended → back to focus
+			notify('Long break over', 'Back to focus!')
+		}
+	}
 
     const toggleTimer = () => setIsActive(!isActive)
     function resetTimer() {
