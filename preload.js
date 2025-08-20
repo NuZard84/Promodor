@@ -70,6 +70,12 @@ contextBridge.exposeInMainWorld('electronAPI', {
     },
 
     sendOverlaySize: (size) => ipcRenderer.send('overlay-size', size),
+
+    // Window controls for main window
+    minimizeWindow: () => ipcRenderer.invoke('minimize-window'),
+    maximizeWindow: () => ipcRenderer.invoke('maximize-window'),
+    closeWindow: () => ipcRenderer.invoke('close-window'),
+    quit: () => ipcRenderer.invoke('quit-app'),
 })
 
 console.log('electronAPI exposed to window')

@@ -52,10 +52,11 @@ function createWindow() {
     mainWindow = new BrowserWindow({
         width: 1200,
         height: 800,
-        transparent: true,
-        backgroundColor: '#00000000',
+        frame: false, // Remove default frame for custom title bar
+        transparent: false,
+        backgroundColor: '#f8fafc',
         webPreferences: {
-            nodeIntegration: true,
+            nodeIntegration: false,
             contextIsolation: true,
             enableRemoteModule: false,
             preload: preloadPath,
@@ -67,8 +68,11 @@ function createWindow() {
         icon: path.join(__dirname, 'assets/icon.png'),
         // Platform-specific settings
         ...platformSettings,
-        // Additional settings for better transparency
-        hasShadow: false,
+        // Additional settings for better appearance
+        hasShadow: true,
+        titleBarStyle: 'hidden',
+        minWidth: 800,
+        minHeight: 600,
     })
 
     // Load the index.html from React app
@@ -107,7 +111,10 @@ function createWindow() {
             overlayWindow.close()
         }
         if (notesOverlayWindow) {
-            notesOverlayWindow.close()
+            closeNotesOverlayWindow()
+        }
+        if (streakOverlayWindow) {
+            closeStreakOverlayWindow()
         }
         mainWindow = null
     })
@@ -230,9 +237,9 @@ function createNotesOverlayWindow() {
     const startUrl = isDev
         ? 'http://localhost:3000#notes-overlay'
         : `file://${path.join(
-              __dirname,
-              'client/build/index.html'
-          )}#notes-overlay`
+            __dirname,
+            'client/build/index.html'
+        )}#notes-overlay`
 
     console.log('Loading notes overlay URL:', startUrl)
     notesOverlayWindow.loadURL(startUrl)
@@ -261,6 +268,13 @@ function closeNotesOverlayWindow() {
     if (notesOverlayWindow) {
         notesOverlayWindow.close()
         notesOverlayWindow = null
+    }
+}
+
+function closeStreakOverlayWindow() {
+    if (streakOverlayWindow) {
+        streakOverlayWindow.close()
+        streakOverlayWindow = null
     }
 }
 
@@ -694,6 +708,33 @@ ipcMain.handle('close-notes-overlay', () => {
     closeNotesOverlayWindow()
 })
 
+// Window control handlers
+ipcMain.handle('minimize-window', () => {
+    if (mainWindow) {
+        mainWindow.minimize()
+    }
+})
+
+ipcMain.handle('maximize-window', () => {
+    if (mainWindow) {
+        if (mainWindow.isMaximized()) {
+            mainWindow.unmaximize()
+        } else {
+            mainWindow.maximize()
+        }
+    }
+})
+
+ipcMain.handle('close-window', () => {
+    if (mainWindow) {
+        mainWindow.close()
+    }
+})
+
+ipcMain.handle('quit-app', () => {
+    app.quit()
+})
+
 // Add missing timer event listeners for overlay windows
 ipcMain.on('toggle-timer', (event) => {
     // Forward to all windows
@@ -746,8 +787,11 @@ ipcMain.handle('toggle-streak-overlay', () => {
 })
 // Replace your createStreakOverlayWindow function with this improved version
 function createStreakOverlayWindow() {
+    console.log('Creating streak overlay window...')
     if (streakOverlayWindow && !streakOverlayWindow.isDestroyed()) {
+        console.log('Streak overlay already exists, focusing...')
         streakOverlayWindow.focus()
+        streakOverlayWindow.show()
         return
     }
 
@@ -772,7 +816,7 @@ function createStreakOverlayWindow() {
         movable: false,
         minimizable: false,
         maximizable: false,
-        closable: false,
+        closable: true,
         backgroundColor: '#00000000',
         webPreferences: {
             preload: preloadPath,
@@ -795,10 +839,11 @@ function createStreakOverlayWindow() {
     const streakUrl = isDev
         ? 'http://localhost:3000#streak-overlay'
         : `file://${path.join(
-              __dirname,
-              'client/build/index.html'
-          )}#streak-overlay`
+            __dirname,
+            'client/build/index.html'
+        )}#streak-overlay`
 
+    console.log('Loading streak overlay URL:', streakUrl)
     streakOverlayWindow.loadURL(streakUrl)
 
     if (isDev || SHOW_DEVTOOLS_IN_PRODUCTION) {
@@ -806,11 +851,25 @@ function createStreakOverlayWindow() {
     }
 
     streakOverlayWindow.once('ready-to-show', () => {
+        console.log('Streak overlay ready to show')
         streakOverlayWindow.show()
         streakOverlayWindow.setBackgroundColor('#00000000')
-        streakOverlayWindow.blur()
-        setTimeout(() => sendStreakOverlayToBackground(), 100)
-        setTimeout(() => sendStreakOverlayToBackground(), 1000)
+
+        // Make it visible initially for 5 seconds, then send to background
+        streakOverlayWindow.setAlwaysOnTop(true)
+        streakOverlayWindow.focus()
+
+        console.log('Streak overlay shown and focused')
+
+        // After 5 seconds, send to background
+        setTimeout(() => {
+            console.log('Sending streak overlay to background after 5 seconds')
+            streakOverlayWindow.blur()
+            sendStreakOverlayToBackground()
+        }, 5000)
+
+        // Ensure it stays in background
+        setTimeout(() => sendStreakOverlayToBackground(), 7000)
     })
 
     streakOverlayWindow.on('closed', () => {
@@ -863,11 +922,10 @@ function sendStreakOverlayToBackground() {
                             }
                         ';
                         try {
-                            [Win32]::SetWindowPos([IntPtr]${
-                                hwnd.readBigUInt64LE
-                                    ? hwnd.readBigUInt64LE()
-                                    : hwnd
-                            }, [Win32]::HWND_BOTTOM, 0, 0, 0, 0, [Win32]::SWP_NOSIZE -bor [Win32]::SWP_NOMOVE -bor [Win32]::SWP_NOACTIVATE);
+                            [Win32]::SetWindowPos([IntPtr]${hwnd.readBigUInt64LE
+                            ? hwnd.readBigUInt64LE()
+                            : hwnd
+                        }, [Win32]::HWND_BOTTOM, 0, 0, 0, 0, [Win32]::SWP_NOSIZE -bor [Win32]::SWP_NOMOVE -bor [Win32]::SWP_NOACTIVATE);
                             Write-Host 'Window sent to bottom successfully';
                         } catch {
                             Write-Host 'Failed to set window position';
@@ -981,9 +1039,7 @@ app.whenReady().then(() => {
     console.log('Platform:', process.platform)
     console.log('Electron version:', process.versions.electron)
 
-    createOverlayWindow() // Start with overlay instead of main window
-    createNotesOverlayWindow() // Create notes window by default
-    createStreakOverlayWindow() // Create the bottom widget
+    createWindow() // Start with main window
     registerGlobalShortcuts()
 
     // Start the position maintenance system
@@ -995,6 +1051,46 @@ app.whenReady().then(() => {
             createOverlayWindow()
         }
     })
+})
+
+// Handle app quit - close all windows
+app.on('before-quit', () => {
+    console.log('App is quitting, closing all overlay windows...')
+
+    if (overlayWindow && !overlayWindow.isDestroyed()) {
+        overlayWindow.close()
+    }
+
+    if (notesOverlayWindow && !notesOverlayWindow.isDestroyed()) {
+        closeNotesOverlayWindow()
+    }
+
+    if (streakOverlayWindow && !streakOverlayWindow.isDestroyed()) {
+        closeStreakOverlayWindow()
+    }
+})
+
+// Handle window-all-closed event
+app.on('window-all-closed', () => {
+    console.log('All windows closed')
+
+    // Close any remaining overlay windows
+    if (overlayWindow && !overlayWindow.isDestroyed()) {
+        overlayWindow.close()
+    }
+
+    if (notesOverlayWindow && !notesOverlayWindow.isDestroyed()) {
+        closeNotesOverlayWindow()
+    }
+
+    if (streakOverlayWindow && !streakOverlayWindow.isDestroyed()) {
+        closeStreakOverlayWindow()
+    }
+
+    // On macOS, keep app running even when all windows are closed
+    if (process.platform !== 'darwin') {
+        app.quit()
+    }
 })
 
 // Update the global shortcut for streak overlay
