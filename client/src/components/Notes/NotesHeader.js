@@ -8,10 +8,11 @@ const NotesHeader = ({
     openMainWindow,
     closeOverlay,
     FilterButton,
+    DeleteAllNotes
 }) => {
     return (
         <div
-            className="Bricolage_Grotesque flex justify-between items-center mb-4"
+            className="Bricolage_Grotesque flex  justify-between items-center mb-4 gap-1"
             style={{
                 WebkitAppRegion: isClickThrough ? 'no-drag' : 'drag',
                 cursor: isClickThrough ? 'default' : 'move',
@@ -46,6 +47,7 @@ const NotesHeader = ({
                     <X size={12} />
                 </button>
                 {FilterButton}
+                {DeleteAllNotes}
             </div>
         </div>
     )

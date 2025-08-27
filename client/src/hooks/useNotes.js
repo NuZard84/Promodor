@@ -47,6 +47,10 @@ const useNotes = () => {
     setNotes(notes.filter(note => note.id !== id));
   }, [notes]);
 
+  const deleteAllNotes = useCallback(() => {
+    setNotes([]);
+  }, []);
+
   const startEditing = useCallback((note) => {
     setEditingId(note.id);
     setEditingText(note.text);
@@ -103,7 +107,8 @@ const useNotes = () => {
     startEditing,
     saveEdit,
     cancelEdit,
-    deleteNote
+    deleteNote,
+    deleteAllNotes
   };
 };
 

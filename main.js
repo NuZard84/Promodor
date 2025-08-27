@@ -209,7 +209,7 @@ function createNotesOverlayWindow() {
     const platformSettings = platformConfig[currentPlatform] || {}
 
     notesOverlayWindow = new BrowserWindow({
-        width: 220,
+        width: 270,
         height: 400,
         alwaysOnTop: true,
         skipTaskbar: true,

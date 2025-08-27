@@ -2,8 +2,9 @@ import React, { useState } from 'react'
 import { useNotes, useOverlay } from '../hooks'
 import { NotesHeader, NotesInput, NotesList } from './Notes'
 import FilterButton from './FilterButton/FilterButton'
-import PriorityCounter from './Notes/NotesCount'
 
+import PriorityCounter from './Notes/NotesCount'
+import DeleteAllNotesComponent from './DeleteAllNotes/DeleteAllNotes'
 const NotesOverlay = () => {
     const [selectedFilter, setSelectedFilter] = useState(null)
     const [showFilters, setShowFilters] = useState(false)
@@ -25,6 +26,7 @@ const NotesOverlay = () => {
         saveEdit,
         cancelEdit,
         deleteNote,
+        deleteAllNotes,
         handleKeyPress,
     } = useNotes()
 
@@ -33,7 +35,7 @@ const NotesOverlay = () => {
 
     return (
         <div
-            className="notes-overlay-container w-min flex flex-col"
+            className="notes-overlay-container w-max flex flex-col "
             style={{
                 height: '80vh', // Changed from h-88 to explicit height
                 borderRadius: '20px',
@@ -42,7 +44,6 @@ const NotesOverlay = () => {
                 // cursor: isClickThrough ? 'default' : 'move',
                 padding: '16px',
                 background: 'rgba(0, 0, 0, 0.5)',
-               
             }}
         >
             {/* Header */}
@@ -60,7 +61,15 @@ const NotesOverlay = () => {
                         setShowFilters={setShowFilters}
                     />
                 }
+                DeleteAllNotes={
+                    <DeleteAllNotesComponent
+                        deleteAllNotes={deleteAllNotes}
+                        notes={notes}
+                    />
+                }
             />
+
+            {/* Delete All Notes Button */}
 
             {/* Add Note Input */}
             <div className="">
@@ -101,7 +110,6 @@ const NotesOverlay = () => {
                 showFilters={showFilters}
                 setShowFilters={setShowFilters}
                 isClickThrough={isClickThrough}
-
             />
             {/* Custom scrollbar styles */}
             <style jsx>{`
