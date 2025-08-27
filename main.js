@@ -385,6 +385,21 @@ function createMenu() {
                     },
                 },
                 {
+                    label: 'Toggle Super Hyper Mode',
+                    accelerator: 'CmdOrCtrl+Shift+X',
+                    click: () => {
+                        if (overlayWindow && !overlayWindow.isDestroyed()) {
+                            overlayWindow.webContents.send('toggle-super-hyper-mode')
+                        }
+                        if (notesOverlayWindow && !notesOverlayWindow.isDestroyed()) {
+                            notesOverlayWindow.webContents.send('toggle-super-hyper-mode')
+                        }
+                        if (mainWindow && !mainWindow.isDestroyed()) {
+                            mainWindow.webContents.send('toggle-super-hyper-mode')
+                        }
+                    },
+                },
+                {
                     label: 'Always on Top',
                     type: 'checkbox',
                     click: (menuItem) => {
@@ -566,6 +581,25 @@ function registerGlobalShortcuts() {
             main: mainWindow ? 'exists' : 'null',
         })
     })
+
+    // Super hyper mode shortcut
+    globalShortcut.register('CmdOrCtrl+Shift+X', () => {
+        console.log('Super hyper mode shortcut triggered!')
+
+        // Send to all windows that might be listening
+        if (overlayWindow && !overlayWindow.isDestroyed()) {
+            console.log('Sending super hyper mode to overlay window')
+            overlayWindow.webContents.send('toggle-super-hyper-mode')
+        }
+        if (notesOverlayWindow && !notesOverlayWindow.isDestroyed()) {
+            console.log('Sending super hyper mode to notes overlay window')
+            notesOverlayWindow.webContents.send('toggle-super-hyper-mode')
+        }
+        if (mainWindow && !mainWindow.isDestroyed()) {
+            console.log('Sending super hyper mode to main window')
+            mainWindow.webContents.send('toggle-super-hyper-mode')
+        }
+    })
 }
 
 // IPC handlers
@@ -693,6 +727,23 @@ ipcMain.handle('toggle-hyper-mode', () => {
     }
     if (mainWindow && !mainWindow.isDestroyed()) {
         mainWindow.webContents.send('toggle-hyper-mode')
+    }
+
+    return true
+})
+
+ipcMain.handle('toggle-super-hyper-mode', () => {
+    console.log('Manual super hyper mode toggle from renderer')
+
+    // Send to all windows that might be listening
+    if (overlayWindow && !overlayWindow.isDestroyed()) {
+        overlayWindow.webContents.send('toggle-super-hyper-mode')
+    }
+    if (notesOverlayWindow && !notesOverlayWindow.isDestroyed()) {
+        notesOverlayWindow.webContents.send('toggle-super-hyper-mode')
+    }
+    if (mainWindow && !mainWindow.isDestroyed()) {
+        mainWindow.webContents.send('toggle-super-hyper-mode')
     }
 
     return true

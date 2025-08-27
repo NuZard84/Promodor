@@ -1,28 +1,55 @@
 import React, { useState, useEffect, useRef } from 'react'
 import useNotifier from '../hooks/useNotifier'
-import {
-    RotateCcw,
-    Settings,
-    X,
-    Eye,
-    NotepadTextIcon,
-} from 'lucide-react'
+import { RotateCcw, Settings, X, Eye, NotepadTextIcon } from 'lucide-react'
 import Lottie from 'lottie-react'
 import ModeSelector from './ModeSelector/ModeSelector'
 import useGlobalShortcuts from '../hooks/useGlobalHooks'
 import fireStreakAnimation from '../assets/animations/fire_streak.json'
 import { completeFocusCycleToday } from '../utils/streak'
 
+// Helper function to create pie slice path
+const describeArc = (x, y, radius, startAngle, endAngle) => {
+    const start = polarToCartesian(x, y, radius, endAngle)
+    const end = polarToCartesian(x, y, radius, startAngle)
+    const largeArcFlag = endAngle - startAngle <= 180 ? '0' : '1'
+
+    return [
+        'M',
+        start.x,
+        start.y,
+        'A',
+        radius,
+        radius,
+        0,
+        largeArcFlag,
+        0,
+        end.x,
+        end.y,
+        'L',
+        x,
+        y,
+        'Z',
+    ].join(' ')
+}
+
+const polarToCartesian = (centerX, centerY, radius, angleInDegrees) => {
+    const angleInRadians = ((angleInDegrees - 90) * Math.PI) / 180.0
+    return {
+        x: centerX + radius * Math.cos(angleInRadians),
+        y: centerY + radius * Math.sin(angleInRadians),
+    }
+}
+
 // Simple editable timer values (change here to test quickly)
-const FOCUS_MIN = 1
-const SHORT_BREAK_MIN = 1
-const LONG_BREAK_MIN = 1
+// const FOCUS_MIN = 1
+// const SHORT_BREAK_MIN = 1
+// const LONG_BREAK_MIN = 1
 // const LONG_BREAK_AFTER = 1
 
-// const FOCUS_MIN = 25
-// const SHORT_BREAK_MIN = 5
-// const LONG_BREAK_MIN = 15
-// const LONG_BREAK_AFTER = 4
+const FOCUS_MIN = 25
+const SHORT_BREAK_MIN = 5
+const LONG_BREAK_MIN = 15
+const LONG_BREAK_AFTER = 4
 
 const OverlayMode = () => {
     // Timer state
@@ -36,7 +63,7 @@ const OverlayMode = () => {
     // Lottie animation ref
     const lottieRef = useRef()
 
-	const notify = useNotifier()
+    const notify = useNotifier()
 
     // Handle hover events for Lottie animation
     const handleMouseEnter = () => {
@@ -71,24 +98,29 @@ const OverlayMode = () => {
         return () => clearInterval(interval)
     }, [isActive, seconds, minutes, handleTimerComplete])
 
-	function handleTimerComplete() {
-		const prevMode = mode
-		const wasFocus = mode === 'focus'
-		resetTimer()
-		disableHyperMode()
-		if (wasFocus) {
-			setCycle((prev) => prev + 1)
-			try { completeFocusCycleToday() } catch {}
-			// Focus just completed → going to short break (by design here)
-			notify('Focus complete', `Time for a short break (${SHORT_BREAK_MIN} min).`)
-		} else if (prevMode === 'shortBreak') {
-			// Short break ended → back to focus
-			notify('Short break over', 'Back to focus!')
-		} else if (prevMode === 'longBreak') {
-			// Long break ended → back to focus
-			notify('Long break over', 'Back to focus!')
-		}
-	}
+    function handleTimerComplete() {
+        const prevMode = mode
+        const wasFocus = mode === 'focus'
+        resetTimer()
+        disableHyperMode() // This will also disable super hyper mode
+        if (wasFocus) {
+            setCycle((prev) => prev + 1)
+            try {
+                completeFocusCycleToday()
+            } catch {}
+            // Focus just completed → going to short break (by design here)
+            notify(
+                'Focus complete',
+                `Time for a short break (${SHORT_BREAK_MIN} min).`
+            )
+        } else if (prevMode === 'shortBreak') {
+            // Short break ended → back to focus
+            notify('Short break over', 'Back to focus!')
+        } else if (prevMode === 'longBreak') {
+            // Long break ended → back to focus
+            notify('Long break over', 'Back to focus!')
+        }
+    }
 
     const toggleTimer = () => setIsActive(!isActive)
     function resetTimer() {
@@ -151,12 +183,18 @@ const OverlayMode = () => {
     const toggleStreakOverlay = () => {
         console.log('toggleStreakOverlay called')
         console.log('electronAPI available:', !!window.electronAPI)
-        console.log('createStreakOverlay function:', typeof window.electronAPI?.createStreakOverlay)
+        console.log(
+            'createStreakOverlay function:',
+            typeof window.electronAPI?.createStreakOverlay
+        )
 
         if (window.electronAPI && window.electronAPI.createStreakOverlay) {
-            window.electronAPI.createStreakOverlay()
+            window.electronAPI
+                .createStreakOverlay()
                 .then(() => console.log('Streak overlay created successfully'))
-                .catch(error => console.error('Error creating streak overlay:', error))
+                .catch((error) =>
+                    console.error('Error creating streak overlay:', error)
+                )
         } else {
             console.error('electronAPI or createStreakOverlay not available')
         }
@@ -199,12 +237,16 @@ const OverlayMode = () => {
                 }
         }
     }
-    const { hyperMode, disableHyperMode } =
-        useGlobalShortcuts()
+    const { hyperMode, superHyperMode, disableHyperMode } = useGlobalShortcuts()
 
     useEffect(() => {
-        console.log(hyperMode)
-    }, [hyperMode])
+        console.log(
+            'Hyper mode:',
+            hyperMode,
+            'Super hyper mode:',
+            superHyperMode
+        )
+    }, [hyperMode, superHyperMode])
     const modeInfo = getModeInfo()
     const currentTimeInSeconds = minutes * 60 + seconds
 
@@ -238,6 +280,64 @@ const OverlayMode = () => {
         }
         setSeconds(0)
     }
+    // Super hyper mode - minimal pie chart timer
+    if (superHyperMode) {
+        const superRadius = 30
+        const superProgress =
+            ((modeInfo.totalTime - currentTimeInSeconds) / modeInfo.totalTime) *
+            100
+        const angle = (superProgress / 100) * 360
+
+        return (
+            <div className='bg-black/20 w-min p-[10px] rounded-xl'>
+                <div
+                    className=" flex items-center justify-center p-2 "
+                    style={{
+                        WebkitAppRegion: isClickThrough ? 'no-drag' : 'drag',
+                        cursor: isClickThrough ? 'default' : 'move',
+                        width: '60px',
+                        height: '60px',
+                        // background: 'transparent', 
+                    }}
+                >
+                    <div className="relative">
+                        <svg width="140" height="140" viewBox="0 0 140 140">
+                            {/* Background circle */}
+                            <circle
+                                cx="70"
+                                cy="70"
+                                r={superRadius}
+                                className='fill-orange-600/30'
+                            />
+
+                                                         {/* Progress pie slice */}
+                             <path
+                                 d={describeArc(
+                                     70,
+                                     70,
+                                     superRadius,
+                                     0,
+                                     Math.max(angle, 1) // Always show at least 1 degree
+                                 )}
+                                 fill={modeInfo.color}
+                                 style={{
+                                     filter: `drop-shadow(0 0 8px ${modeInfo.color}80)`,
+                                 }}
+                             />
+                        </svg>
+
+                        {/* Timer Text */}
+                        <div className="absolute inset-0 flex items-center justify-center">
+                            <div className="Bricolage_Grotesque font-bold text-white text-sm tracking-wide">
+                                {formatTime(minutes, seconds)}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        )
+    }
+
     return (
         <div
             className="overlay-container w-min h-full flex flex-col "
@@ -269,10 +369,11 @@ const OverlayMode = () => {
                 <div className="flex space-x-2">
                     <button
                         onClick={toggleClickThrough}
-                        className={`w-8 h-8 rounded-full transition-all flex items-center justify-center ${isClickThrough
-                            ? 'bg-blue-500 bg-opacity-80 text-white'
-                            : 'bg-white bg-opacity-10 hover:bg-opacity-20 text-white text-opacity-60 hover:text-opacity-100'
-                            }`}
+                        className={`w-8 h-8 rounded-full transition-all flex items-center justify-center ${
+                            isClickThrough
+                                ? 'bg-blue-500 bg-opacity-80 text-white'
+                                : 'bg-white bg-opacity-10 hover:bg-opacity-20 text-white text-opacity-60 hover:text-opacity-100'
+                        }`}
                         title="Toggle Click-through (Ctrl+Shift+C)"
                     >
                         <Eye size={14} />
@@ -353,7 +454,9 @@ const OverlayMode = () => {
                                         style={{
                                             color: '#FF6B47',
                                             WebkitAppRegion: 'no-drag',
-                                            pointerEvents: isClickThrough ? 'none' : 'auto',
+                                            pointerEvents: isClickThrough
+                                                ? 'none'
+                                                : 'auto',
                                         }}
                                         title="Open Streak Tracker"
                                     >
@@ -361,11 +464,16 @@ const OverlayMode = () => {
                                         <div className="w-[26px] h-[26px] mx-[-6px]">
                                             <Lottie
                                                 lottieRef={lottieRef}
-                                                animationData={fireStreakAnimation}
+                                                animationData={
+                                                    fireStreakAnimation
+                                                }
                                                 loop={false}
                                                 autoplay={false}
                                                 onError={(error) => {
-                                                    console.error('Lottie animation error:', error)
+                                                    console.error(
+                                                        'Lottie animation error:',
+                                                        error
+                                                    )
                                                 }}
                                             />
                                         </div>
@@ -406,8 +514,9 @@ const OverlayMode = () => {
                 {/* Bottom Control Buttons */}
             </div>
             <div
-                className={`flex  justify-center gap-2 ${hyperMode ? 'hidden' : ''
-                    }`}
+                className={`flex  justify-center gap-2 ${
+                    hyperMode ? 'hidden' : ''
+                }`}
                 style={{
                     WebkitAppRegion: 'no-drag',
                     pointerEvents: isClickThrough ? 'none' : 'auto',
@@ -418,7 +527,6 @@ const OverlayMode = () => {
                     onClick={resetTimer}
                     className="w-8 h-8 rounded-full bg-white bg-opacity-10 hover:bg-opacity-20 text-white text-opacity-60 hover:text-opacity-100 transition-all flex items-center justify-center"
                     style={{
-
                         border: '1px solid rgba(255, 255, 255, 0.1)',
                     }}
                 >
@@ -430,7 +538,6 @@ const OverlayMode = () => {
                     onClick={toggleTimer}
                     className="Bricolage_Grotesque px-5 text-xs rounded-full bg-white bg-opacity-15 hover:bg-opacity-25 text-white transition-all flex items-center justify-center"
                     style={{
-
                         border: '1px solid rgba(255, 255, 255, 0.15)',
                         boxShadow: '0 6px 24px rgba(0, 0, 0, 0.3)',
                     }}
@@ -449,7 +556,6 @@ const OverlayMode = () => {
                     onClick={openMainWindow}
                     className="hidden w-8 h-8 rounded-full bg-white bg-opacity-10 hover:bg-opacity-20 text-white text-opacity-60 hover:text-opacity-100 transition-all flex items-center justify-center"
                     style={{
-
                         border: '1px solid rgba(255, 255, 255, 0.1)',
                     }}
                 >
@@ -459,14 +565,12 @@ const OverlayMode = () => {
                     onClick={toggleNotesOverlay}
                     className="w-8 h-8 rounded-full bg-white bg-opacity-10 hover:bg-opacity-20 text-white text-opacity-60 hover:text-opacity-100 transition-all flex items-center justify-center"
                     style={{
-
                         border: '1px solid rgba(255, 255, 255, 0.1)',
                     }}
                 >
                     <NotepadTextIcon size={12} />
                 </button>
             </div>
-
 
             {/* Bottom Shortcut Hint */}
             <div

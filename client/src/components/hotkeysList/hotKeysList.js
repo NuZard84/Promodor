@@ -8,6 +8,7 @@ const CompactShortcutsHelp = () => {
         { keys: 'Space', desc: 'Start/Pause Timer' },
         { keys: 'Ctrl+R', desc: 'Reset Timer' },
         { keys: 'Ctrl+Shift+A', desc: 'Hyper Mode' },
+        { keys: 'Ctrl+Shift+X', desc: 'Super Hyper Mode' },
         { keys: 'Ctrl+Shift+N', desc: 'Toggle Notes' },
         { keys: 'Ctrl+Shift+O', desc: 'Toggle Overlay' },
         { keys: 'Ctrl+Shift+H', desc: 'Hide Window' },

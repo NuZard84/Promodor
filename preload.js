@@ -34,6 +34,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
         return ipcRenderer.invoke('close-notes-overlay')
     },
     toggleHyperMode: () => ipcRenderer.invoke('toggle-hyper-mode'),
+    toggleSuperHyperMode: () => ipcRenderer.invoke('toggle-super-hyper-mode'),
 
     // Listen for shortcut events from main process
     onToggleHyperMode: (callback) => {
@@ -42,6 +43,14 @@ contextBridge.exposeInMainWorld('electronAPI', {
         // Return cleanup function
         return () => {
             ipcRenderer.removeListener('toggle-hyper-mode', callback)
+        }
+    },
+    onToggleSuperHyperMode: (callback) => {
+        ipcRenderer.on('toggle-super-hyper-mode', callback)
+
+        // Return cleanup function
+        return () => {
+            ipcRenderer.removeListener('toggle-super-hyper-mode', callback)
         }
     },
     // Notifications
