@@ -302,7 +302,7 @@ const OverlayMode = () => {
         const angle = (superProgress / 100) * 360
 
         return (
-            <div className='bg-black/20 w-min p-[10px] rounded-xl'>
+            <div className='bg-black/30 w-min p-[10px] rounded-xl'>
                 <div
                     className=" flex items-center justify-center p-2 "
                     style={{
@@ -320,7 +320,7 @@ const OverlayMode = () => {
                                  cx="70"
                                  cy="70"
                                  r={superRadius}
-                                 fill={`${modeInfo.color}20`}
+                                 fill={`${modeInfo.color}30`}
                              />
 
                                                          {/* Progress pie slice */}
