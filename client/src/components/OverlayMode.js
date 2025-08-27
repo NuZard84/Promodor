@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react'
 import useNotifier from '../hooks/useNotifier'
-import { RotateCcw, Settings, X, Eye, NotepadTextIcon } from 'lucide-react'
+import { RotateCcw, Settings, X, Eye, NotepadTextIcon, Shrimp, Shrink } from 'lucide-react'
 import Lottie from 'lottie-react'
 import ModeSelector from './ModeSelector/ModeSelector'
 import useGlobalShortcuts from '../hooks/useGlobalHooks'
@@ -59,6 +59,7 @@ const OverlayMode = () => {
     const [mode, setMode] = useState('focus')
     const [cycle, setCycle] = useState(0)
     const [isClickThrough, setIsClickThrough] = useState(false)
+    const [autoHyperMode, setAutoHyperMode] = useState(false)
 
     // Lottie animation ref
     const lottieRef = useRef()
@@ -122,7 +123,19 @@ const OverlayMode = () => {
         }
     }
 
-    const toggleTimer = () => setIsActive(!isActive)
+    const toggleTimer = () => {
+        const newActiveState = !isActive
+        
+        // If starting the timer and auto hyper mode is enabled, enable super hyper mode
+        if (newActiveState && autoHyperMode && !superHyperMode) {
+            // Enable super hyper mode when starting timer
+            if (window.electronAPI && window.electronAPI.toggleSuperHyperMode) {
+                window.electronAPI.toggleSuperHyperMode()
+            }
+        }
+        
+        setIsActive(newActiveState)
+    }
     function resetTimer() {
         setIsActive(false)
         if (mode === 'focus') {
@@ -302,13 +315,13 @@ const OverlayMode = () => {
                 >
                     <div className="relative">
                         <svg width="140" height="140" viewBox="0 0 140 140">
-                            {/* Background circle */}
-                            <circle
-                                cx="70"
-                                cy="70"
-                                r={superRadius}
-                                className='fill-orange-600/30'
-                            />
+                                                         {/* Background circle */}
+                             <circle
+                                 cx="70"
+                                 cy="70"
+                                 r={superRadius}
+                                 fill={`${modeInfo.color}20`}
+                             />
 
                                                          {/* Progress pie slice */}
                              <path
@@ -504,13 +517,33 @@ const OverlayMode = () => {
                     </div>
                 </div>
             </div>
-            <div className={` ${hyperMode ? 'hidden' : ''}`}>
+            <div className={` ${hyperMode ? 'hidden' : ''} `}>
                 <ModeSelector
                     mode={mode}
                     onModeChange={handleModeChange}
                     isActive={isActive}
                     modeInfo={modeInfo}
                 />
+                
+                                 {/* Auto Super Hyper Mode Toggle */}
+                 <div className="flex items-center justify-center mt-3 mb-2 absolute top-1 right-3 ">
+                     <button
+                         onClick={() => setAutoHyperMode(!autoHyperMode)}
+                         className={`flex items-center space-x-2 cursor-pointer p-1 rounded-full transition-all ${
+                             autoHyperMode 
+                                 ? 'bg-orange-500/80 text-white' 
+                                 : 'bg-orange-400/40 text-white/70 hover:bg-black/60'
+                         }`}
+                         title="Toggle auto super hyper mode"
+                         style={{
+                             WebkitAppRegion: 'no-drag',
+                             pointerEvents: isClickThrough ? 'none' : 'auto',
+                         }}
+                     >
+                         <Shrink size={16}/>
+                     </button>
+                 </div>
+                
                 {/* Bottom Control Buttons */}
             </div>
             <div
