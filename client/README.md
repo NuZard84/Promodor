@@ -1,70 +1,98 @@
-# Getting Started with Create React App
+# Frozen Streak System
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+## Overview
 
-## Available Scripts
+The frozen streak system implements a hybrid protection mechanism similar to Duolingo's streak freeze feature, designed to help users maintain their productivity streaks even when they miss a day.
 
-In the project directory, you can run:
+## How It Works
 
-### `npm start`
+### 1. Streak Freezes
+- **Earning**: Users earn 1 streak freeze every 4 consecutive days of activity
+- **Maximum**: Users can hold up to 3 streak freezes at a time
+- **Usage**: Automatically consumed when a user misses a day. One freeze is used per day missed
+- **Manual**: Can be manually added/used for testing purposes
 
-Runs the app in the development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in your browser.
+### 2. Protection Priority
+1. **Streak Freeze**: First and only line of defense (automatic consumption)
+2. **Streak Break**: If no protection is available when a day is missed
 
-The page will reload when you make changes.\
-You may also see any lint errors in the console.
+## Implementation Details
 
-### `npm test`
+### Data Structure
+```javascript
+{
+  currentStreak: 0,
+  lastCompletedDateKey: null,
+  completedDays: {},
+  weeklyCycleCounts: {},
+  streakFreezes: 0,           // Number of available freezes
+  lastMissedDateKey: null,    // When user last missed a day
+  gracePeriodUsed: false,     // This is no longer in use
+}
+```
 
-Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
+### Key Functions
+- `ensureRolloverNow()`: Checks if streak should be maintained or broken, applies protection mechanisms automatically
+- `markTodayComplete()`: Marks today as completed, awards streak freezes every 4 days
+- `getStreakProtectionStatus()`: Returns current protection status, shows available freezes, indicates if streak is currently protected
 
-### `npm run build`
+### Visual Indicators
+- **Streak Overlay**: Blue badge shows the number of available streak freezes
+- **Main App**: Header displays current streak and frozen streak count
+- **Statistics Section**: Comprehensive view of streak system with test panel
 
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
+## Testing Scenarios
 
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
+### Scenario 1: Normal Streak Continuation
+- Complete a session today
+- Complete a session tomorrow
+- Streak continues normally
 
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
+### Scenario 2: Streak Freeze Usage (1 Day Missed)
+- Complete a session today
+- Miss tomorrow
+- Have at least 1 streak freeze available
+- Complete a session on the third day
+- Streak continues (1 freeze consumed)
 
-### `npm run eject`
+### Scenario 3: Streak Freeze Usage (2 Days Missed)
+- Complete a session today
+- Miss tomorrow and the day after
+- Have at least 2 streak freezes available
+- Complete a session on the fourth day
+- Streak continues (2 freezes consumed)
 
-**Note: this is a one-way operation. Once you `eject`, you can't go back!**
+### Scenario 4: Streak Break
+- Complete a session today
+- Miss tomorrow
+- No streak freezes available
+- Complete a session the day after tomorrow
+- Streak resets to 1
 
-If you aren't satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
+### Scenario 5: Streak Break (Consecutive Missed Days)
+- Complete a session today
+- Miss tomorrow and the day after
+- Only have 1 streak freeze available
+- Streak is broken on the second day of being missed
+- On the fourth day, streak resets to 1 when a session is completed
 
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you're on your own.
+## Benefits
 
-You don't have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn't feel obligated to use this feature. However we understand that this tool wouldn't be useful if you couldn't customize it when you are ready for it.
+- **User Retention**: Reduces frustration from losing streaks due to occasional missed days
+- **Engagement**: Encourages consistent usage to earn freezes
+- **Flexibility**: Provides a protection layer
+- **Fairness**: Limits protection to prevent abuse
 
-## Learn More
+## Future Enhancements
 
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
+- **Premium Features**: Additional freezes for premium users
+- **Social Features**: Gift freezes to friends
+- **Achievements**: Rewards for maintaining long streaks
+- **Analytics**: Track protection usage patterns
 
-To learn React, check out the [React documentation](https://reactjs.org/).
+## Usage in App
 
-### Code Splitting
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/code-splitting](https://facebook.github.io/create-react-app/docs/code-splitting)
-
-### Analyzing the Bundle Size
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size](https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size)
-
-### Making a Progressive Web App
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app](https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app)
-
-### Advanced Configuration
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/advanced-configuration](https://facebook.github.io/create-react-app/docs/advanced-configuration)
-
-### Deployment
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/deployment](https://facebook.github.io/create-react-app/docs/deployment)
-
-### `npm run build` fails to minify
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify](https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify)
+- **Automatic**: Protection works automatically in the background
+- **Visual Feedback**: Users can see their protection status
+- **Testing**: Test panel available in the Statistics section
+- **Transparency**: Clear indicators when protection is used

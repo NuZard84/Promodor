@@ -1,10 +1,12 @@
 import React, { useEffect, useState } from 'react'
-import { X, Eye, Flame, Calendar, Target, TrendingUp } from 'lucide-react'
+import { X, Eye, Flame, Calendar, Target, TrendingUp, Shield } from 'lucide-react'
 import {
     ensureRolloverNow,
     getCurrentWeekInfo,
     getCurrentStreak,
     getWeeklyCycleCount,
+    getStreakFreezes,
+    getStreakProtectionStatus,
     onLocalMidnight,
 } from '../utils/streak'
 
@@ -12,6 +14,8 @@ const StreakOverlay = () => {
     const [isClickThrough, setIsClickThrough] = useState(false)
     const WEEKLY_GOAL = 28
     const [currentStreak, setCurrentStreak] = useState(0)
+    const [streakFreezes, setStreakFreezes] = useState(0)
+    const [protectionStatus, setProtectionStatus] = useState({})
     const [weekInfo, setWeekInfo] = useState(() => getCurrentWeekInfo())
     const [weeklyCycleCount, setWeeklyCycleCount] = useState(() =>
         getWeeklyCycleCount()
@@ -65,6 +69,8 @@ const StreakOverlay = () => {
         const refresh = () => {
             ensureRolloverNow()
             setCurrentStreak(getCurrentStreak())
+            setStreakFreezes(getStreakFreezes())
+            setProtectionStatus(getStreakProtectionStatus())
             setWeekInfo(getCurrentWeekInfo())
             setWeeklyCycleCount(getWeeklyCycleCount())
         }
@@ -188,6 +194,25 @@ const StreakOverlay = () => {
                     </div>
                 </div>
 
+                {/* Frozen Streak Display */}
+                <div className="min-w-20 bg-white/10 justify-center flex flex-col rounded-xl p-2 text-center">
+                    <div className="text-4xl font-bold text-white">
+                        <div className="relative rounded-full">
+                            <Flame
+                                size={22}
+                                className="text-blue-400 fill-blue-300 mx-auto mb-1"
+                            />
+                        </div>
+                        {streakFreezes || 0}
+                    </div>
+                    <div className="text-white/60 text-[10px] leading-tight">
+                        Frozen
+                    </div>
+                    <div className="text-white/60 text-[10px] leading-tight">
+                        Streaks
+                    </div>
+                </div>
+
                 <div className="hidden bg-white/10 rounded-lg p-2 text-center">
                     <Target size={14} className="text-green-500 mx-auto mb-1" />
                     <div className="text-lg font-bold text-white">0</div>
@@ -235,6 +260,12 @@ const StreakOverlay = () => {
                             ]
                             const isToday = d.isToday
                             const completed = d.completed
+                            
+                            // Check if this day was protected by a freeze
+                            const wasProtected = d.key && protectionStatus.lastMissed && 
+                                d.key === protectionStatus.lastMissed && 
+                                streakFreezes > 0
+                            
                             return (
                                 <div
                                     key={d.key}
@@ -262,6 +293,19 @@ const StreakOverlay = () => {
                                                 size={18}
                                             />
                                         </div>
+                                    ) : wasProtected ? (
+                                        <div
+                                            className={`w-6 h-6 rounded-full ${
+                                                isToday
+                                                    ? 'bg-blue-600'
+                                                    : 'bg-blue-500/80'
+                                            } flex justify-center items-center`}
+                                        >
+                                            <Flame
+                                                className="text-white/70 fill-blue-700"
+                                                size={18}
+                                            />
+                                        </div>
                                     ) : (
                                         <div
                                             className={`w-6 h-6 rounded-full ${
@@ -274,39 +318,6 @@ const StreakOverlay = () => {
                                 </div>
                             )
                         })}
-                        {/* {['S', 'M', 'T', 'W', 'T', 'F', 'S'].map(
-                            (day, index) => {
-                                const today = new Date().getDay() // 0 = Sunday, 1 = Monday, etc.
-                                const isToday = index === today
-
-                                return (
-                                    <div
-                                        key={index}
-                                        className="flex flex-col text-center py-1 font-medium"
-                                    >
-                                        <div
-                                            className={`text-xs ${
-                                                isToday
-                                                    ? 'text-white'
-                                                    : 'text-white/50'
-                                            }`}
-                                        >
-                                            {day}
-                                        </div>
-                                        {index % 1 == 0 ? (
-                                            <div className="w-6 h-6 rounded-full bg-orange-600 flex justify-center items-center">
-                                                <Flame
-                                                    className="text-white/70 fill-orange-700"
-                                                    size={18}
-                                                />
-                                            </div>
-                                        ) : (
-                                            <div className="w-6 h-6 rounded-full bg-orange-500/20"></div>
-                                        )}
-                                    </div>
-                                )
-                            }
-                        )} */}
                     </div>
                 </div>
             </div>

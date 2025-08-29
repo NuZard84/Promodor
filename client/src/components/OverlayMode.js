@@ -41,15 +41,15 @@ const polarToCartesian = (centerX, centerY, radius, angleInDegrees) => {
 }
 
 // Simple editable timer values (change here to test quickly)
-// const FOCUS_MIN = 1
-// const SHORT_BREAK_MIN = 1
-// const LONG_BREAK_MIN = 1
-// const LONG_BREAK_AFTER = 1
+const FOCUS_MIN = 1
+const SHORT_BREAK_MIN = 1
+const LONG_BREAK_MIN = 1
+const LONG_BREAK_AFTER = 1
 
-const FOCUS_MIN = 25
-const SHORT_BREAK_MIN = 5
-const LONG_BREAK_MIN = 15
-const LONG_BREAK_AFTER = 4
+// const FOCUS_MIN = 25
+// const SHORT_BREAK_MIN = 5
+// const LONG_BREAK_MIN = 15
+// const LONG_BREAK_AFTER = 4
 
 const OverlayMode = () => {
     // Timer state

@@ -32,6 +32,9 @@ export const loadStreak = () => {
         lastCompletedDateKey: null,
         completedDays: {}, // map of YYYY-MM-DD -> true
         weeklyCycleCounts: {}, // map of weekStartKey (YYYY-MM-DD of Sunday) -> number of cycles
+        streakFreezes: 0, // Number of available streak freezes
+        lastMissedDateKey: null, // When user last missed a day
+        gracePeriodUsed: false, // This is no longer in use
       }
     }
     const data = JSON.parse(raw)
@@ -40,6 +43,9 @@ export const loadStreak = () => {
       lastCompletedDateKey: data.lastCompletedDateKey || null,
       completedDays: data.completedDays || {},
       weeklyCycleCounts: data.weeklyCycleCounts || {},
+      streakFreezes: Number(data.streakFreezes) || 0,
+      lastMissedDateKey: data.lastMissedDateKey || null,
+      gracePeriodUsed: data.gracePeriodUsed || false,
     }
   } catch {
     return {
@@ -47,6 +53,9 @@ export const loadStreak = () => {
       lastCompletedDateKey: null,
       completedDays: {},
       weeklyCycleCounts: {},
+      streakFreezes: 0,
+      lastMissedDateKey: null,
+      gracePeriodUsed: false,
     }
   }
 }
@@ -59,6 +68,9 @@ const saveStreak = (data) => {
       lastCompletedDateKey: data.lastCompletedDateKey,
       completedDays: data.completedDays,
       weeklyCycleCounts: data.weeklyCycleCounts || {},
+      streakFreezes: data.streakFreezes,
+      lastMissedDateKey: data.lastMissedDateKey,
+      gracePeriodUsed: data.gracePeriodUsed,
     })
   )
 }
@@ -85,9 +97,21 @@ export const ensureRolloverNow = () => {
     return data
   }
 
-  // If last completion is neither today nor yesterday, the streak is broken
+  // Check if we can use streak freezes to maintain the streak
   if (data.lastCompletedDateKey && data.lastCompletedDateKey !== todayKey) {
-    data.currentStreak = 0
+    const daysMissed = daysBetween(data.lastCompletedDateKey, todayKey)
+    
+    if (daysMissed <= data.streakFreezes && data.streakFreezes > 0) {
+      // Use streak freezes to maintain the streak
+      const freezesToUse = Math.min(daysMissed, data.streakFreezes)
+      data.streakFreezes -= freezesToUse
+      data.lastMissedDateKey = todayKey
+      // Streak continues, no reset
+    } else {
+      // Not enough freezes or no freezes available, streak is broken
+      data.currentStreak = 0
+      data.lastMissedDateKey = todayKey
+    }
     saveStreak(data)
   }
   return data
@@ -106,6 +130,10 @@ export const markTodayComplete = () => {
   const gap = daysBetween(data.lastCompletedDateKey, todayKey)
   if (gap === 1) {
     data.currentStreak += 1
+    // Award streak freeze every 4 consecutive days
+    if (data.currentStreak % 4 === 0 && data.streakFreezes < 3) {
+      data.streakFreezes = Math.min(data.streakFreezes + 1, 3)
+    }
   } else {
     // gap 0 shouldn't happen due to early return; gap > 1 means new streak
     data.currentStreak = 1
@@ -115,6 +143,26 @@ export const markTodayComplete = () => {
   data.lastCompletedDateKey = todayKey
   saveStreak(data)
   return data
+}
+
+// Get streak protection status
+export const getStreakProtectionStatus = () => {
+  const data = ensureRolloverNow()
+  const todayKey = toLocalDateKey()
+  const yesterday = new Date()
+  yesterday.setDate(yesterday.getDate() - 1)
+  const yesterdayKey = toLocalDateKey(yesterday)
+  
+  const isProtected = data.lastCompletedDateKey === yesterdayKey || 
+                     (data.lastMissedDateKey && data.streakFreezes > 0)
+  
+  return {
+    isProtected,
+    availableFreezes: data.streakFreezes,
+    lastCompleted: data.lastCompletedDateKey,
+    lastMissed: data.lastMissedDateKey,
+    currentStreak: data.currentStreak
+  }
 }
 
 // Get completion info for the current local week (Sunday-Saturday)
@@ -159,6 +207,8 @@ export const onLocalMidnight = (callback) => {
 
 export const getCurrentStreak = () => ensureRolloverNow().currentStreak
 
+export const getStreakFreezes = () => ensureRolloverNow().streakFreezes
+
 export const resetAllStreakData = () => {
   localStorage.removeItem(STORAGE_KEY)
 }
@@ -191,6 +241,43 @@ export const completeFocusCycleToday = () => {
   const result = markTodayComplete()
   incrementWeeklyCycleCount()
   return result
+}
+
+// Test function to simulate missing a day (for testing purposes)
+export const testMissDay = () => {
+  const data = loadStreak()
+  const todayKey = toLocalDateKey()
+  
+  // Simulate missing today by setting last completed to 2 days ago
+  const twoDaysAgo = new Date()
+  twoDaysAgo.setDate(twoDaysAgo.getDate() - 2)
+  const twoDaysAgoKey = toLocalDateKey(twoDaysAgo)
+  
+  data.lastCompletedDateKey = twoDaysAgoKey
+  data.lastMissedDateKey = todayKey
+  
+  // Check if we can use freezes
+  const daysMissed = daysBetween(twoDaysAgoKey, todayKey)
+  if (daysMissed <= data.streakFreezes && data.streakFreezes > 0) {
+    // Use streak freezes to maintain the streak
+    const freezesToUse = Math.min(daysMissed, data.streakFreezes)
+    data.streakFreezes -= freezesToUse
+    // Streak continues, no reset
+  } else {
+    // Not enough freezes or no freezes available, streak is broken
+    data.currentStreak = 0
+  }
+  
+  saveStreak(data)
+  return data
+}
+
+// Test function to manually add streak freezes (for testing purposes)
+export const addTestStreakFreezes = (count = 1) => {
+  const data = loadStreak()
+  data.streakFreezes = Math.min(data.streakFreezes + count, 3)
+  saveStreak(data)
+  return data.streakFreezes
 }
 
 export const _internal = { toLocalDateKey, parseKeyToDate, daysBetween }

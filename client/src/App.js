@@ -22,6 +22,7 @@ import {
   NotesOverlay,
   StreakOverlay
 } from './components';
+import { getCurrentStreak, getStreakFreezes, getStreakProtectionStatus, testMissDay, addTestStreakFreezes } from './utils/streak';
 
 const App = () => {
   // Check if we're in overlay mode
@@ -69,6 +70,11 @@ const App = () => {
   const [showViewMenu, setShowViewMenu] = useState(false);
   const [showHelpMenu, setShowHelpMenu] = useState(false);
   const [isDarkMode, setIsDarkMode] = useState(false);
+  
+  // Streak state
+  const [currentStreak, setCurrentStreak] = useState(0);
+  const [streakFreezes, setStreakFreezes] = useState(0);
+  const [streakProtectionStatus, setStreakProtectionStatus] = useState({});
 
   // Navigation items 
   const navigationItems = [
@@ -88,6 +94,48 @@ const App = () => {
       updateCompletedTasks(completedTasks + 1);
     }
   }, [mode, isActive, minutes, seconds, completedTasks, updateCompletedTasks]);
+
+  // Load streak data
+  useEffect(() => {
+    const loadStreakData = () => {
+      setCurrentStreak(getCurrentStreak());
+      setStreakFreezes(getStreakFreezes());
+      setStreakProtectionStatus(getStreakProtectionStatus());
+    };
+    
+    loadStreakData();
+    
+    // Listen for storage changes to update streak data
+    const handleStorageChange = (e) => {
+      if (e.key === 'promodor_streak_v1') {
+        loadStreakData();
+      }
+    };
+    
+    window.addEventListener('storage', handleStorageChange);
+    return () => window.removeEventListener('storage', handleStorageChange);
+  }, []);
+
+  // Test functions for frozen streak system
+  const handleTestMissDay = () => {
+    testMissDay();
+    // Reload streak data after test
+    setTimeout(() => {
+      setCurrentStreak(getCurrentStreak());
+      setStreakFreezes(getStreakFreezes());
+      setStreakProtectionStatus(getStreakProtectionStatus());
+    }, 100);
+  };
+
+  const handleAddTestFreezes = () => {
+    addTestStreakFreezes(1);
+    // Reload streak data after test
+    setTimeout(() => {
+      setCurrentStreak(getCurrentStreak());
+      setStreakFreezes(getStreakFreezes());
+      setStreakProtectionStatus(getStreakProtectionStatus());
+    }, 100);
+  };
 
   // Overlay functions
   const createOverlay = (type) => {
@@ -180,6 +228,11 @@ const App = () => {
           cycle={cycle}
           tasks={tasks}
           isDarkMode={isDarkMode}
+          currentStreak={currentStreak}
+          streakFreezes={streakFreezes}
+          streakProtectionStatus={streakProtectionStatus}
+          onTestMissDay={handleTestMissDay}
+          onAddTestFreezes={handleAddTestFreezes}
         />;
       case 'overlays':
         return <OverlaysContent createOverlay={createOverlay} isDarkMode={isDarkMode} />;
@@ -220,6 +273,20 @@ const App = () => {
               <Timer className="w-2.5 h-2.5 text-white" />
             </div>
             <span className="text-xs font-medium">Pomogo</span>
+            
+            {/* Streak Indicator */}
+            <div className="ml-4 flex items-center gap-2">
+              <div className="flex items-center gap-1">
+                <div className="w-3 h-3 rounded-full bg-orange-500"></div>
+                <span className="text-xs text-gray-300">{currentStreak}</span>
+              </div>
+              {streakFreezes > 0 && (
+                <div className="flex items-center gap-1">
+                  <div className="w-3 h-3 rounded-full bg-blue-400"></div>
+                  <span className="text-xs text-gray-300">{streakFreezes}</span>
+                </div>
+              )}
+            </div>
           </div>
 
           {/* Menu Items */}
@@ -607,7 +674,7 @@ const TasksContent = ({
 };
 
 // Stats Content Component
-const StatsContent = ({ completedTasks, cycle, tasks, isDarkMode }) => {
+const StatsContent = ({ completedTasks, cycle, tasks, isDarkMode, currentStreak, streakFreezes, streakProtectionStatus, onTestMissDay, onAddTestFreezes }) => {
   const completedTasksList = tasks.filter(task => task.completed);
 
   return (
@@ -665,6 +732,111 @@ const StatsContent = ({ completedTasks, cycle, tasks, isDarkMode }) => {
                 Current Cycle
               </div>
             </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Frozen Streak System */}
+      <div className={`${isDarkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'
+        } rounded-2xl p-6 border`}>
+        <h3 className={`text-lg font-semibold ${isDarkMode ? 'text-white' : 'text-gray-800'
+          } mb-4 flex items-center gap-2`}>
+          <div className="w-6 h-6 rounded-lg bg-blue-100 dark:bg-blue-900/20 flex items-center justify-center">
+            <div className="w-4 h-4 rounded-full bg-blue-400"></div>
+          </div>
+          Frozen Streak System
+        </h3>
+        
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+          {/* Current Streak */}
+          <div className={`${isDarkMode ? 'bg-gray-700' : 'bg-gray-50'} rounded-xl p-4 text-center`}>
+            <div className="text-2xl font-bold text-orange-500 mb-1">{currentStreak}</div>
+            <div className={`text-sm ${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>Current Streak</div>
+          </div>
+          
+          {/* Available Freezes */}
+          <div className={`${isDarkMode ? 'bg-gray-700' : 'bg-gray-50'} rounded-xl p-4 text-center`}>
+            <div className="text-2xl font-bold text-blue-500 mb-1">{streakFreezes}</div>
+            <div className={`text-sm ${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>Available Freezes</div>
+          </div>
+          
+          {/* Protection Status */}
+          <div className={`${isDarkMode ? 'bg-gray-700' : 'bg-gray-50'} rounded-xl p-4 text-center`}>
+            <div className={`text-2xl font-bold mb-1 ${streakProtectionStatus.isProtected ? 'text-green-500' : 'text-gray-500'}`}>
+              {streakProtectionStatus.isProtected ? 'Protected' : 'Unprotected'}
+            </div>
+            <div className={`text-sm ${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>Status</div>
+          </div>
+        </div>
+        
+        {/* Protection Info */}
+        <div className={`${isDarkMode ? 'bg-gray-700' : 'bg-gray-50'} rounded-xl p-4`}>
+          <h4 className={`font-medium ${isDarkMode ? 'text-white' : 'text-gray-800'} mb-2`}>
+            How It Works
+          </h4>
+          <ul className={`text-sm space-y-1 ${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>
+            <li>• Earn 1 freeze every 4 consecutive days of activity</li>
+            <li>• Maximum of 3 freezes can be held at once</li>
+            <li>• Freezes automatically protect your streak when you miss a day</li>
+            <li>• One freeze is consumed per day missed</li>
+          </ul>
+        </div>
+      </div>
+
+      {/* Test Panel for Frozen Streak System */}
+      <div className={`${isDarkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'
+        } rounded-2xl p-6 border`}>
+        <h3 className={`text-lg font-semibold ${isDarkMode ? 'text-white' : 'text-gray-800'
+          } mb-4 flex items-center gap-2`}>
+          <div className="w-6 h-6 rounded-lg bg-yellow-100 dark:bg-yellow-900/20 flex items-center justify-center">
+            <div className="w-4 h-4 rounded-full bg-yellow-400"></div>
+          </div>
+          Test Panel
+        </h3>
+        
+        <div className={`${isDarkMode ? 'bg-gray-700' : 'bg-gray-50'} rounded-xl p-4`}>
+          <h4 className={`font-medium ${isDarkMode ? 'text-white' : 'text-gray-800'} mb-3`}>
+            Test Frozen Streak System
+          </h4>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <h5 className={`font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-600'} mb-2`}>
+                Current Status
+              </h5>
+              <div className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-500'} space-y-1`}>
+                <div>• Current Streak: {currentStreak} days</div>
+                <div>• Available Freezes: {streakFreezes}</div>
+                <div>• Protection: {streakProtectionStatus.isProtected ? 'Active' : 'Inactive'}</div>
+                <div>• Last Completed: {streakProtectionStatus.lastCompleted ? new Date(streakProtectionStatus.lastCompleted).toLocaleDateString() : 'Never'}</div>
+              </div>
+            </div>
+            <div>
+              <h5 className={`font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-600'} mb-2`}>
+                How to Test
+              </h5>
+              <div className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-500'} space-y-1`}>
+                <div>• Complete a session today to start earning freezes</div>
+                <div>• Miss a day to see freeze protection in action</div>
+                <div>• Earn freezes every 4 consecutive days</div>
+                <div>• Maximum of 3 freezes can be held</div>
+              </div>
+            </div>
+          </div>
+          
+          {/* Test Buttons */}
+          <div className="flex gap-3 mt-4">
+            <button
+              onClick={onTestMissDay}
+              className="px-4 py-2 bg-red-500 hover:bg-red-600 text-white rounded-lg text-sm font-medium transition-colors"
+            >
+              Test Miss Day
+            </button>
+            <button
+              onClick={onAddTestFreezes}
+              className="px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg text-sm font-medium transition-colors"
+            >
+              Add Test Freeze
+            </button>
           </div>
         </div>
       </div>
