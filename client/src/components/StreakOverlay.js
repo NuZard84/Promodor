@@ -5,6 +5,8 @@ import {
     getCurrentWeekInfo,
     getCurrentStreak,
     getWeeklyCycleCount,
+    getStreakFreezes,
+    getStreakProtectionStatus,
     onLocalMidnight,
 } from '../utils/streak'
 
@@ -16,6 +18,8 @@ const StreakOverlay = () => {
     const [weeklyCycleCount, setWeeklyCycleCount] = useState(() =>
         getWeeklyCycleCount()
     )
+    const [streakFreezes, setStreakFreezes] = useState(0)
+    const [protectionStatus, setProtectionStatus] = useState({})
 
     const toggleClickThrough = () => {
         const newState = !isClickThrough
@@ -67,6 +71,8 @@ const StreakOverlay = () => {
             setCurrentStreak(getCurrentStreak())
             setWeekInfo(getCurrentWeekInfo())
             setWeeklyCycleCount(getWeeklyCycleCount())
+            setStreakFreezes(getStreakFreezes())
+            setProtectionStatus(getStreakProtectionStatus())
         }
         // Initial
         refresh()
@@ -165,7 +171,7 @@ const StreakOverlay = () => {
                         Cycle
                     </div>
                 </div>
-                <div className="min-w-20 bg-white/10  justify-center flex  flex-col rounded-xl p-2 text-center">
+                <div className="min-w-20 bg-white/10  justify-center flex  flex-col rounded-xl p-2 text-center relative">
                     <div className="text-4xl font-bold text-white">
                         <div
                             className={`relative rounded-full ${
@@ -186,6 +192,22 @@ const StreakOverlay = () => {
                     <div className="text-white/60 text-[10px] leading-tight">
                         Streak
                     </div>
+                    
+                    {/* Streak Freeze Indicator */}
+                    {streakFreezes > 0 && (
+                        <div className="absolute -top-1 -right-1 bg-blue-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center font-bold">
+                            {streakFreezes}
+                        </div>
+                    )}
+                    
+                    {/* Protection Status Indicator */}
+                    {protectionStatus.isProtected && (
+                        <div className="absolute -bottom-1 -right-1 bg-green-500 text-white text-xs rounded-full w-4 h-4 flex items-center justify-center">
+                            <svg width="8" height="8" viewBox="0 0 24 24" fill="currentColor">
+                                <path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4z"/>
+                            </svg>
+                        </div>
+                    )}
                 </div>
 
                 <div className="hidden bg-white/10 rounded-lg p-2 text-center">
@@ -309,6 +331,26 @@ const StreakOverlay = () => {
                         )} */}
                     </div>
                 </div>
+                
+                {/* Frozen Streak Info */}
+                {(streakFreezes > 0 || protectionStatus.isProtected) && (
+                    <div className="mt-2 text-center">
+                        <div className="text-white/70 text-xs">
+                            {streakFreezes > 0 && (
+                                <span className="inline-flex items-center gap-1 mr-2">
+                                    <span className="w-2 h-2 bg-blue-500 rounded-full"></span>
+                                    {streakFreezes} freeze{streakFreezes > 1 ? 's' : ''} available
+                                </span>
+                            )}
+                            {protectionStatus.isProtected && (
+                                <span className="inline-flex items-center gap-1">
+                                    <span className="w-2 h-2 bg-green-500 rounded-full"></span>
+                                    Streak protected
+                                </span>
+                            )}
+                        </div>
+                    </div>
+                )}
             </div>
 
             {/* Weekly Progress */}

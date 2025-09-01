@@ -22,6 +22,7 @@ import {
   NotesOverlay,
   StreakOverlay
 } from './components';
+import StreakTestPanel from './components/StreakTestPanel';
 
 const App = () => {
   // Check if we're in overlay mode
@@ -679,6 +680,16 @@ const StatsContent = ({ completedTasks, cycle, tasks, isDarkMode }) => {
           <p className={isDarkMode ? 'text-gray-400' : 'text-gray-500'}>
             Progress charts will be implemented here
           </p>
+        </div>
+      </div>
+
+      {/* Streak Test Panel */}
+      <div className={`${isDarkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'
+        } rounded-2xl p-8 border`}>
+        <h3 className={`text-lg font-semibold ${isDarkMode ? 'text-white' : 'text-gray-800'
+          } mb-6`}>Frozen Streak Testing</h3>
+        <div className="flex justify-center">
+          <StreakTestPanel />
         </div>
       </div>
     </div>

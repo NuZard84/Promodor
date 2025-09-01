@@ -41,15 +41,15 @@ const polarToCartesian = (centerX, centerY, radius, angleInDegrees) => {
 }
 
 // Simple editable timer values (change here to test quickly)
-// const FOCUS_MIN = 1
-// const SHORT_BREAK_MIN = 1
-// const LONG_BREAK_MIN = 1
-// const LONG_BREAK_AFTER = 1
+const FOCUS_MIN = 1
+const SHORT_BREAK_MIN = 1
+const LONG_BREAK_MIN = 1
+const LONG_BREAK_AFTER = 1
 
-const FOCUS_MIN = 25
-const SHORT_BREAK_MIN = 5
-const LONG_BREAK_MIN = 15
-const LONG_BREAK_AFTER = 4
+// const FOCUS_MIN = 25
+// const SHORT_BREAK_MIN = 5
+// const LONG_BREAK_MIN = 15
+// const LONG_BREAK_AFTER = 4
 
 const OverlayMode = () => {
     // Timer state
@@ -302,7 +302,7 @@ const OverlayMode = () => {
         const angle = (superProgress / 100) * 360
 
         return (
-            <div className='bg-black/30 w-min p-[10px] rounded-xl'>
+            <div className='bg-black/40 w-min p-[10px] rounded-2xl'>
                 <div
                     className=" flex items-center justify-center p-2 "
                     style={{
