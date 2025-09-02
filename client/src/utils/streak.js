@@ -280,6 +280,36 @@ export const addTestStreakFreezes = (count = 1) => {
   return data.streakFreezes
 }
 
+// Test function to simulate completing multiple consecutive days (for testing purposes)
+export const simulateConsecutiveDays = (days = 4) => {
+  const data = loadStreak()
+  const today = new Date()
+  
+  // Clear existing data to start fresh
+  data.completedDays = {}
+  data.currentStreak = 0
+  data.streakFreezes = 0
+  
+  // Mark the last 'days' days as completed
+  for (let i = days - 1; i >= 0; i--) {
+    const date = new Date(today)
+    date.setDate(today.getDate() - i)
+    const dateKey = toLocalDateKey(date)
+    data.completedDays[dateKey] = true
+  }
+  
+  // Set the streak and last completed date
+  data.currentStreak = days
+  data.lastCompletedDateKey = toLocalDateKey(today)
+  
+  // Award freezes based on streak (1 freeze every 4 days)
+  const freezesEarned = Math.floor(days / 4)
+  data.streakFreezes = Math.min(freezesEarned, 3)
+  
+  saveStreak(data)
+  return data
+}
+
 export const _internal = { toLocalDateKey, parseKeyToDate, daysBetween }
 
 

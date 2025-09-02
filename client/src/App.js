@@ -22,7 +22,7 @@ import {
   NotesOverlay,
   StreakOverlay
 } from './components';
-import { getCurrentStreak, getStreakFreezes, getStreakProtectionStatus, testMissDay, addTestStreakFreezes } from './utils/streak';
+import { getCurrentStreak, getStreakFreezes, getStreakProtectionStatus, testMissDay, addTestStreakFreezes, completeFocusCycleToday, resetAllStreakData, simulateConsecutiveDays } from './utils/streak';
 
 const App = () => {
   // Check if we're in overlay mode
@@ -137,6 +137,48 @@ const App = () => {
     }, 100);
   };
 
+  const handleCompleteFocusCycle = () => {
+    completeFocusCycleToday();
+    // Reload streak data after test
+    setTimeout(() => {
+      setCurrentStreak(getCurrentStreak());
+      setStreakFreezes(getStreakFreezes());
+      setStreakProtectionStatus(getStreakProtectionStatus());
+    }, 100);
+  };
+
+  const handleResetAllStreakData = () => {
+    if (window.confirm('Are you sure you want to reset all streak data? This cannot be undone.')) {
+      resetAllStreakData();
+      // Reload streak data after test
+      setTimeout(() => {
+        setCurrentStreak(getCurrentStreak());
+        setStreakFreezes(getStreakFreezes());
+        setStreakProtectionStatus(getStreakProtectionStatus());
+      }, 100);
+    }
+  };
+
+  const handleAddMultipleFreezes = (count) => {
+    addTestStreakFreezes(count);
+    // Reload streak data after test
+    setTimeout(() => {
+      setCurrentStreak(getCurrentStreak());
+      setStreakFreezes(getStreakFreezes());
+      setStreakProtectionStatus(getStreakProtectionStatus());
+    }, 100);
+  };
+
+  const handleSimulateConsecutiveDays = (days) => {
+    simulateConsecutiveDays(days);
+    // Reload streak data after test
+    setTimeout(() => {
+      setCurrentStreak(getCurrentStreak());
+      setStreakFreezes(getStreakFreezes());
+      setStreakProtectionStatus(getStreakProtectionStatus());
+    }, 100);
+  };
+
   // Overlay functions
   const createOverlay = (type) => {
     if (window.electronAPI) {
@@ -233,6 +275,10 @@ const App = () => {
           streakProtectionStatus={streakProtectionStatus}
           onTestMissDay={handleTestMissDay}
           onAddTestFreezes={handleAddTestFreezes}
+          onCompleteFocusCycle={handleCompleteFocusCycle}
+          onResetAllStreakData={handleResetAllStreakData}
+          onAddMultipleFreezes={handleAddMultipleFreezes}
+          onSimulateConsecutiveDays={handleSimulateConsecutiveDays}
         />;
       case 'overlays':
         return <OverlaysContent createOverlay={createOverlay} isDarkMode={isDarkMode} />;
@@ -674,7 +720,21 @@ const TasksContent = ({
 };
 
 // Stats Content Component
-const StatsContent = ({ completedTasks, cycle, tasks, isDarkMode, currentStreak, streakFreezes, streakProtectionStatus, onTestMissDay, onAddTestFreezes }) => {
+const StatsContent = ({ 
+  completedTasks, 
+  cycle, 
+  tasks, 
+  isDarkMode, 
+  currentStreak, 
+  streakFreezes, 
+  streakProtectionStatus, 
+  onTestMissDay, 
+  onAddTestFreezes, 
+  onCompleteFocusCycle, 
+  onResetAllStreakData, 
+  onAddMultipleFreezes,
+  onSimulateConsecutiveDays
+}) => {
   const completedTasksList = tasks.filter(task => task.completed);
 
   return (
@@ -783,7 +843,7 @@ const StatsContent = ({ completedTasks, cycle, tasks, isDarkMode, currentStreak,
         </div>
       </div>
 
-      {/* Test Panel for Frozen Streak System */}
+      {/* Enhanced Test Panel for Frozen Streak System */}
       <div className={`${isDarkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'
         } rounded-2xl p-6 border`}>
         <h3 className={`text-lg font-semibold ${isDarkMode ? 'text-white' : 'text-gray-800'
@@ -791,23 +851,32 @@ const StatsContent = ({ completedTasks, cycle, tasks, isDarkMode, currentStreak,
           <div className="w-6 h-6 rounded-lg bg-yellow-100 dark:bg-yellow-900/20 flex items-center justify-center">
             <div className="w-4 h-4 rounded-full bg-yellow-400"></div>
           </div>
-          Test Panel
+          Frozen Streak Test Panel
         </h3>
         
         <div className={`${isDarkMode ? 'bg-gray-700' : 'bg-gray-50'} rounded-xl p-4`}>
           <h4 className={`font-medium ${isDarkMode ? 'text-white' : 'text-gray-800'} mb-3`}>
             Test Frozen Streak System
           </h4>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          
+          {/* Current Status */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
             <div>
               <h5 className={`font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-600'} mb-2`}>
                 Current Status
               </h5>
               <div className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-500'} space-y-1`}>
-                <div>• Current Streak: {currentStreak} days</div>
-                <div>• Available Freezes: {streakFreezes}</div>
-                <div>• Protection: {streakProtectionStatus.isProtected ? 'Active' : 'Inactive'}</div>
-                <div>• Last Completed: {streakProtectionStatus.lastCompleted ? new Date(streakProtectionStatus.lastCompleted).toLocaleDateString() : 'Never'}</div>
+                <div>• Current Streak: <span className="font-semibold text-orange-500">{currentStreak}</span> days</div>
+                <div>• Available Freezes: <span className="font-semibold text-blue-500">{streakFreezes}</span></div>
+                <div>• Protection: <span className={`font-semibold ${streakProtectionStatus.isProtected ? 'text-green-500' : 'text-red-500'}`}>
+                  {streakProtectionStatus.isProtected ? 'Active' : 'Inactive'}
+                </span></div>
+                <div>• Last Completed: <span className="font-semibold">
+                  {streakProtectionStatus.lastCompleted ? new Date(streakProtectionStatus.lastCompleted).toLocaleDateString() : 'Never'}
+                </span></div>
+                <div>• Last Missed: <span className="font-semibold">
+                  {streakProtectionStatus.lastMissed ? new Date(streakProtectionStatus.lastMissed).toLocaleDateString() : 'None'}
+                </span></div>
               </div>
             </div>
             <div>
@@ -815,28 +884,104 @@ const StatsContent = ({ completedTasks, cycle, tasks, isDarkMode, currentStreak,
                 How to Test
               </h5>
               <div className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-500'} space-y-1`}>
-                <div>• Complete a session today to start earning freezes</div>
-                <div>• Miss a day to see freeze protection in action</div>
-                <div>• Earn freezes every 4 consecutive days</div>
-                <div>• Maximum of 3 freezes can be held</div>
+                <div>1. <strong>Complete Focus Cycle</strong> - Mark today as completed</div>
+                <div>2. <strong>Earn Freezes</strong> - Get 1 freeze every 4 consecutive days</div>
+                <div>3. <strong>Test Miss Day</strong> - Simulate missing a day</div>
+                <div>4. <strong>Add Test Freezes</strong> - Manually add freezes for testing</div>
+                <div>5. <strong>Reset Data</strong> - Clear all streak data to start fresh</div>
               </div>
             </div>
           </div>
           
           {/* Test Buttons */}
-          <div className="flex gap-3 mt-4">
-            <button
-              onClick={onTestMissDay}
-              className="px-4 py-2 bg-red-500 hover:bg-red-600 text-white rounded-lg text-sm font-medium transition-colors"
-            >
-              Test Miss Day
-            </button>
-            <button
-              onClick={onAddTestFreezes}
-              className="px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg text-sm font-medium transition-colors"
-            >
-              Add Test Freeze
-            </button>
+          <div className="space-y-3">
+            <h5 className={`font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-600'} mb-2`}>
+              Test Actions
+            </h5>
+            
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+              <button
+                onClick={onCompleteFocusCycle}
+                className="px-3 py-2 bg-green-500 hover:bg-green-600 text-white rounded-lg text-sm font-medium transition-colors"
+                title="Mark today as completed and increment streak"
+              >
+                Complete Cycle
+              </button>
+              
+              <button
+                onClick={onTestMissDay}
+                className="px-3 py-2 bg-red-500 hover:bg-red-600 text-white rounded-lg text-sm font-medium transition-colors"
+                title="Simulate missing a day to test freeze protection"
+              >
+                Test Miss Day
+              </button>
+              
+              <button
+                onClick={onAddTestFreezes}
+                className="px-3 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg text-sm font-medium transition-colors"
+                title="Add 1 test freeze"
+              >
+                Add 1 Freeze
+              </button>
+              
+              <button
+                onClick={() => onAddMultipleFreezes(3)}
+                className="px-3 py-2 bg-purple-500 hover:bg-purple-600 text-white rounded-lg text-sm font-medium transition-colors"
+                title="Add 3 test freezes (maximum)"
+              >
+                Add 3 Freezes
+              </button>
+            </div>
+            
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
+              <button
+                onClick={() => onSimulateConsecutiveDays(4)}
+                className="px-3 py-2 bg-indigo-500 hover:bg-indigo-600 text-white rounded-lg text-sm font-medium transition-colors"
+                title="Simulate 4 consecutive days (earns 1 freeze)"
+              >
+                Simulate 4 Days
+              </button>
+              
+              <button
+                onClick={() => onSimulateConsecutiveDays(8)}
+                className="px-3 py-2 bg-teal-500 hover:bg-teal-600 text-white rounded-lg text-sm font-medium transition-colors"
+                title="Simulate 8 consecutive days (earns 2 freezes)"
+              >
+                Simulate 8 Days
+              </button>
+              
+              <button
+                onClick={() => onSimulateConsecutiveDays(12)}
+                className="px-3 py-2 bg-pink-500 hover:bg-pink-600 text-white rounded-lg text-sm font-medium transition-colors"
+                title="Simulate 12 consecutive days (earns 3 freezes)"
+              >
+                Simulate 12 Days
+              </button>
+            </div>
+            
+            <div className="flex gap-2">
+              <button
+                onClick={onResetAllStreakData}
+                className="px-4 py-2 bg-gray-500 hover:bg-gray-600 text-white rounded-lg text-sm font-medium transition-colors"
+                title="Reset all streak data to start fresh"
+              >
+                Reset All Data
+              </button>
+            </div>
+          </div>
+          
+          {/* Test Scenarios */}
+          <div className="mt-4">
+            <h5 className={`font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-600'} mb-2`}>
+              Test Scenarios
+            </h5>
+            <div className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-500'} space-y-1`}>
+              <div><strong>Scenario 1:</strong> Simulate 4 days → Earn 1 freeze → Test Miss Day → Streak continues</div>
+              <div><strong>Scenario 2:</strong> Add 3 freezes → Test Miss Day 3 times → Streak continues → No freezes left</div>
+              <div><strong>Scenario 3:</strong> Test Miss Day without freezes → Streak resets to 0</div>
+              <div><strong>Scenario 4:</strong> Simulate 8 days → Earn 2 freezes → Test Miss Day → Streak continues</div>
+              <div><strong>Scenario 5:</strong> Simulate 12 days → Earn 3 freezes (maximum) → Test Miss Day → Streak continues</div>
+            </div>
           </div>
         </div>
       </div>
