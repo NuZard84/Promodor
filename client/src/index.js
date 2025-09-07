@@ -16,7 +16,7 @@ if (window.location.hash === '#overlay' || window.location.hash === '#notes-over
   // Main window styles
   document.body.style.margin = '0';
   document.body.style.padding = '0';
-  document.body.style.background = '#0f172a';
+  document.body.style.background = 'transparent';
   document.body.style.fontFamily = '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
 }
 

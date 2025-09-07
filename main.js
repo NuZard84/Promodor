@@ -101,8 +101,8 @@ function createWindow() {
 
     // Create the main browser window
     mainWindow = new BrowserWindow({
-        width: 1200,
-        height: 800,
+        width: 1300,
+        height: 775,
         frame: false, // Remove default frame for custom title bar
         transparent: false,
         backgroundColor: '#f8fafc',
@@ -122,8 +122,8 @@ function createWindow() {
         // Additional settings for better appearance
         hasShadow: true,
         titleBarStyle: 'hidden',
-        minWidth: 800,
-        minHeight: 600,
+        minWidth: 1300,
+        minHeight: 775,
     })
 
     // Load the index.html from React app

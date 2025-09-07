@@ -118,6 +118,7 @@ const App = () => {
     return () => window.removeEventListener('storage', handleStorageChange);
   }, []);
 
+
   // Test functions for frozen streak system
   const handleTestMissDay = () => {
     testMissDay();
@@ -333,7 +334,7 @@ const App = () => {
   };
 
   return (
-    <div className={`min-h-screen flex flex-col ${isDarkMode
+    <div className={`h-screen flex flex-col ${isDarkMode
       ? 'bg-gradient-to-br from-gray-900 to-gray-800'
       : 'bg-gradient-to-br from-gray-50 to-gray-100'
       }`}>
@@ -523,12 +524,12 @@ const App = () => {
       </div>
 
       {/* Main App Content */}
-      <div className="flex flex-1">
+      <div className="flex flex-1 min-h-0">
         {/* Sidebar */}
         <div className={`w-64 ${isDarkMode
           ? 'bg-gray-800 border-r border-gray-700'
           : 'bg-white border-r border-gray-200'
-          } flex flex-col`}>
+          } flex flex-col sticky top-0`} style={{ height: 'calc(100vh - 2rem)', maxHeight: 'calc(100vh - 2rem)' }}>
           {/* Logo */}
           <div className={`p-6 ${isDarkMode ? 'border-b border-gray-700' : 'border-b border-gray-200'
             }`}>
@@ -546,7 +547,7 @@ const App = () => {
           </div>
 
           {/* Navigation */}
-          <nav className="flex-1 p-4">
+          <nav className="flex-1 p-4 overflow-y-auto">
             <div className="space-y-2">
               {navigationItems.map((item) => {
                 const Icon = item.icon;
@@ -572,11 +573,11 @@ const App = () => {
           </nav>
 
           {/* Theme Toggle */}
-          <div className={`p-4 ${isDarkMode ? 'border-t border-gray-700' : 'border-t border-gray-200'
+          <div className={`p-3 ${isDarkMode ? 'border-t border-gray-700' : 'border-t border-gray-200'
             }`}>
             <button
               onClick={() => setIsDarkMode(!isDarkMode)}
-              className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 ${isDarkMode
+              className={`w-full flex items-center gap-3 px-4 py-2 rounded-xl transition-all duration-200 ${isDarkMode
                 ? 'text-gray-300 hover:bg-orange-900/20 hover:text-orange-400'
                 : 'text-gray-600 hover:bg-orange-50 hover:text-orange-600'
                 }`}
@@ -588,12 +589,12 @@ const App = () => {
         </div>
 
         {/* Main Content */}
-        <div className="flex-1 flex flex-col">
+        <div className="flex-1 flex flex-col min-h-0">
           {/* Header */}
           <header className={`${isDarkMode
             ? 'bg-gray-800 border-b border-gray-700'
             : 'bg-white border-b border-gray-200'
-            } px-8 py-[18px]`}>
+            } px-8 py-[18px] sticky top-0 z-10`}>
             <div className="flex items-center justify-between">
               <div>
                 <h2 className={`text-2xl font-bold ${isDarkMode ? 'text-white' : 'text-gray-800'
@@ -609,7 +610,7 @@ const App = () => {
           </header>
 
           {/* Content */}
-          <main className="flex-1 p-8 overflow-auto">
+          <main className="flex-1 p-8 overflow-y-auto custom-scrollbar">
             {renderMainContent()}
           </main>
         </div>
@@ -1045,59 +1046,59 @@ const OverlaysContent = ({ createOverlay, isDarkMode }) => (
         Create floating overlay windows that stay on top of other applications.
       </p>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
         <div className={`p-6 border ${isDarkMode ? 'border-gray-700' : 'border-gray-200'
-          } rounded-xl`}>
+          } rounded-xl flex flex-col h-full`}>
           <div className="w-12 h-12 rounded-xl bg-orange-100 dark:bg-orange-900/20 flex items-center justify-center mb-4">
             <Timer className="w-6 h-6 text-orange-500" />
           </div>
           <h4 className={`font-semibold ${isDarkMode ? 'text-white' : 'text-gray-800'
             } mb-2`}>Timer Overlay</h4>
           <p className={`${isDarkMode ? 'text-gray-400' : 'text-gray-600'
-            } text-sm mb-4`}>
+            } text-sm mb-4 flex-grow`}>
             Compact timer that floats above other windows
           </p>
           <button
             onClick={() => createOverlay('timer')}
-            className="w-full px-4 py-2 bg-orange-500 hover:bg-orange-600 text-white rounded-lg transition-colors"
+            className="w-full px-4 py-2 bg-orange-500 hover:bg-orange-600 text-white rounded-lg transition-colors mt-auto"
           >
             Create Timer Overlay
           </button>
         </div>
 
         <div className={`p-6 border ${isDarkMode ? 'border-gray-700' : 'border-gray-200'
-          } rounded-xl`}>
+          } rounded-xl flex flex-col h-full`}>
           <div className="w-12 h-12 rounded-xl bg-blue-100 dark:bg-blue-900/20 flex items-center justify-center mb-4">
             <CheckSquare className="w-6 h-6 text-blue-500" />
           </div>
           <h4 className={`font-semibold ${isDarkMode ? 'text-white' : 'text-gray-800'
             } mb-2`}>Notes Overlay</h4>
           <p className={`${isDarkMode ? 'text-gray-400' : 'text-gray-600'
-            } text-sm mb-4`}>
+            } text-sm mb-4 flex-grow`}>
             Quick notes and task list overlay
           </p>
           <button
             onClick={() => createOverlay('notes')}
-            className="w-full px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg transition-colors"
+            className="w-full px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg transition-colors mt-auto"
           >
             Create Notes Overlay
           </button>
         </div>
 
         <div className={`p-6 border ${isDarkMode ? 'border-gray-700' : 'border-gray-200'
-          } rounded-xl`}>
+          } rounded-xl flex flex-col h-full`}>
           <div className="w-12 h-12 rounded-xl bg-green-100 dark:bg-green-900/20 flex items-center justify-center mb-4">
             <BarChart3 className="w-6 h-6 text-green-500" />
           </div>
           <h4 className={`font-semibold ${isDarkMode ? 'text-white' : 'text-gray-800'
             } mb-2`}>Streak Overlay</h4>
           <p className={`${isDarkMode ? 'text-gray-400' : 'text-gray-600'
-            } text-sm mb-4`}>
+            } text-sm mb-4 flex-grow`}>
             Progress streak display at bottom of screen
           </p>
           <button
             onClick={() => createOverlay('streak')}
-            className="w-full px-4 py-2 bg-green-500 hover:bg-green-600 text-white rounded-lg transition-colors"
+            className="w-full px-4 py-2 bg-green-500 hover:bg-green-600 text-white rounded-lg transition-colors mt-auto"
           >
             Create Streak Overlay
           </button>
