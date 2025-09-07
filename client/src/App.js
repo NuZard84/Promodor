@@ -23,6 +23,7 @@ import {
   StreakOverlay
 } from './components';
 import { getCurrentStreak, getStreakFreezes, getStreakProtectionStatus, testMissDay, addTestStreakFreezes, completeFocusCycleToday, resetAllStreakData, simulateConsecutiveDays } from './utils/streak';
+import { featureFlags } from './featureFlags';
 
 const App = () => {
   // Check if we're in overlay mode
@@ -70,6 +71,7 @@ const App = () => {
   const [showViewMenu, setShowViewMenu] = useState(false);
   const [showHelpMenu, setShowHelpMenu] = useState(false);
   const [isDarkMode, setIsDarkMode] = useState(false);
+  const [closeAllWithMain, setCloseAllWithMain] = useState(featureFlags.closeAllWithMain);
   
   // Streak state
   const [currentStreak, setCurrentStreak] = useState(0);
@@ -177,6 +179,33 @@ const App = () => {
       setStreakFreezes(getStreakFreezes());
       setStreakProtectionStatus(getStreakProtectionStatus());
     }, 100);
+  };
+
+  // Feature flag update function
+  const updateFeatureFlag = async (flagName, value) => {
+    if (flagName === 'closeAllWithMain') {
+      setCloseAllWithMain(value);
+      // Update the feature flag file
+      if (window.electronAPI?.updateFeatureFlag) {
+        try {
+          const success = await window.electronAPI.updateFeatureFlag(flagName, value);
+          if (success) {
+            console.log('Feature flag updated successfully:', flagName, value);
+          } else {
+            console.error('Failed to update feature flag:', flagName, value);
+            // Revert the state if update failed
+            setCloseAllWithMain(!value);
+          }
+        } catch (error) {
+          console.error('Error updating feature flag:', error);
+          // Revert the state if update failed
+          setCloseAllWithMain(!value);
+        }
+      } else {
+        // For browser mode, we can update the local state
+        console.log('Feature flag updated locally:', flagName, value);
+      }
+    }
   };
 
   // Overlay functions
@@ -289,6 +318,8 @@ const App = () => {
           settings={settings}
           updateSettings={updateSettings}
           isDarkMode={isDarkMode}
+          closeAllWithMain={closeAllWithMain}
+          updateFeatureFlag={updateFeatureFlag}
         />;
       case 'notifications':
         return <NotificationsContent isDarkMode={isDarkMode} />;
@@ -1077,7 +1108,7 @@ const OverlaysContent = ({ createOverlay, isDarkMode }) => (
 );
 
 // Settings Content Component
-const SettingsContent = ({ settings, updateSettings, isDarkMode }) => (
+const SettingsContent = ({ settings, updateSettings, isDarkMode, closeAllWithMain, updateFeatureFlag }) => (
   <div className="space-y-6">
     <div className={`${isDarkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'
       } rounded-2xl p-8 border`}>
@@ -1147,6 +1178,42 @@ const SettingsContent = ({ settings, updateSettings, isDarkMode }) => (
               : 'bg-white border-gray-200 text-gray-900'
               }`}
           />
+        </div>
+      </div>
+    </div>
+
+    {/* Feature Flags Section */}
+    <div className={`${isDarkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'
+      } rounded-2xl p-8 border`}>
+      <h3 className={`text-2xl font-bold ${isDarkMode ? 'text-white' : 'text-gray-800'
+        } mb-6`}>Overlay Behavior</h3>
+
+      <div className="space-y-4">
+        <div className="flex items-center justify-between">
+          <div>
+            <div className={`font-medium ${isDarkMode ? 'text-white' : 'text-gray-800'
+              }`}>Close overlays with main app</div>
+            <div className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-600'
+              }`}>
+              When enabled, all overlay windows will close when the main app is closed. 
+              When disabled, overlay windows will stay open even when the main app is closed.
+            </div>
+          </div>
+          <button 
+            onClick={() => updateFeatureFlag('closeAllWithMain', !closeAllWithMain)}
+            className={`w-12 h-6 ${closeAllWithMain ? 'bg-orange-500' : isDarkMode ? 'bg-gray-600' : 'bg-gray-300'
+              } rounded-full relative transition-colors`}
+          >
+            <div className={`w-5 h-5 bg-white rounded-full absolute top-0.5 transition-transform ${
+              closeAllWithMain ? 'translate-x-6' : 'translate-x-0.5'
+            }`}></div>
+          </button>
+        </div>
+        
+        <div className={`${isDarkMode ? 'bg-gray-700' : 'bg-gray-50'} rounded-xl p-4`}>
+          <div className={`text-sm ${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>
+            <strong>Current setting:</strong> {closeAllWithMain ? 'Overlays will close with main app' : 'Overlays will stay open when main app closes'}
+          </div>
         </div>
       </div>
     </div>

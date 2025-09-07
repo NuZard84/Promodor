@@ -8,9 +8,60 @@ const {
 } = require('electron')
 const path = require('path')
 const isDev = require('electron-is-dev')
+const fs = require('fs')
 
 // Add this flag at the top after isDev
 const SHOW_DEVTOOLS_IN_PRODUCTION = false // Set to true to enable DevTools in production
+
+// Function to load feature flags
+const loadFeatureFlags = () => {
+    try {
+        const featureFlagsPath = isDev 
+            ? path.join(__dirname, 'client/src/featureFlags.js')
+            : path.join(__dirname, 'client/build/static/js/featureFlags.js')
+        
+        console.log('Loading feature flags from:', featureFlagsPath)
+        
+        // For now, we'll use a simple approach and read the JavaScript file
+        if (isDev) {
+            const content = fs.readFileSync(featureFlagsPath, 'utf8')
+            console.log('Feature flags file content:', content)
+            // Simple regex to extract the closeAllWithMain value
+            const match = content.match(/closeAllWithMain:\s*(true|false)/)
+            const result = match ? match[1] === 'true' : true // default to true
+            console.log('Feature flag closeAllWithMain:', result)
+            return result
+        }
+        return true // default to true in production
+    } catch (error) {
+        console.error('Error loading feature flags:', error)
+        return true // default to true on error
+    }
+}
+
+// Function to update feature flags
+const updateFeatureFlag = (flagName, value) => {
+    try {
+        const featureFlagsPath = isDev 
+            ? path.join(__dirname, 'client/src/featureFlags.js')
+            : path.join(__dirname, 'client/build/static/js/featureFlags.js')
+        
+        if (isDev && flagName === 'closeAllWithMain') {
+            const content = fs.readFileSync(featureFlagsPath, 'utf8')
+            const updatedContent = content.replace(
+                /closeAllWithMain:\s*(true|false)/,
+                `closeAllWithMain: ${value}`
+            )
+            fs.writeFileSync(featureFlagsPath, updatedContent, 'utf8')
+            console.log(`Feature flag ${flagName} updated to ${value}`)
+            return true
+        }
+        return false
+    } catch (error) {
+        console.error('Error updating feature flag:', error)
+        return false
+    }
+}
 
 let mainWindow
 let overlayWindow = null
@@ -107,15 +158,26 @@ function createWindow() {
     }
 
     mainWindow.on('closed', () => {
-        if (overlayWindow) {
-            overlayWindow.close()
+        // Check feature flag to determine if overlays should close with main app
+        const shouldCloseAllWithMain = loadFeatureFlags()
+        
+        if (shouldCloseAllWithMain) {
+            // Original behavior: close all overlays when main app closes
+            if (overlayWindow) {
+                overlayWindow.close()
+            }
+            if (notesOverlayWindow) {
+                closeNotesOverlayWindow()
+            }
+            if (streakOverlayWindow) {
+                closeStreakOverlayWindow()
+            }
+        } else {
+            // New behavior: keep overlays open when main app closes
+            console.log('Feature flag set to keep overlays open when main app closes')
+            // Just set mainWindow to null without closing overlays
         }
-        if (notesOverlayWindow) {
-            closeNotesOverlayWindow()
-        }
-        if (streakOverlayWindow) {
-            closeStreakOverlayWindow()
-        }
+        
         mainWindow = null
     })
 
@@ -836,6 +898,12 @@ ipcMain.handle('toggle-streak-overlay', () => {
         createStreakOverlayWindow()
     }
 })
+
+// Feature flag update handler
+ipcMain.handle('update-feature-flag', (event, flagName, value) => {
+    console.log(`IPC: update-feature-flag called with ${flagName} = ${value}`)
+    return updateFeatureFlag(flagName, value)
+})
 // Replace your createStreakOverlayWindow function with this improved version
 function createStreakOverlayWindow() {
     console.log('Creating streak overlay window...')
@@ -1106,36 +1174,52 @@ app.whenReady().then(() => {
 
 // Handle app quit - close all windows
 app.on('before-quit', () => {
-    console.log('App is quitting, closing all overlay windows...')
+    console.log('App is quitting, checking feature flag for overlay behavior...')
+    
+    // Check feature flag to determine if overlays should close with app
+    const shouldCloseAllWithMain = loadFeatureFlags()
+    
+    if (shouldCloseAllWithMain) {
+        console.log('Feature flag enabled: closing all overlay windows...')
+        if (overlayWindow && !overlayWindow.isDestroyed()) {
+            overlayWindow.close()
+        }
 
-    if (overlayWindow && !overlayWindow.isDestroyed()) {
-        overlayWindow.close()
-    }
+        if (notesOverlayWindow && !notesOverlayWindow.isDestroyed()) {
+            closeNotesOverlayWindow()
+        }
 
-    if (notesOverlayWindow && !notesOverlayWindow.isDestroyed()) {
-        closeNotesOverlayWindow()
-    }
-
-    if (streakOverlayWindow && !streakOverlayWindow.isDestroyed()) {
-        closeStreakOverlayWindow()
+        if (streakOverlayWindow && !streakOverlayWindow.isDestroyed()) {
+            closeStreakOverlayWindow()
+        }
+    } else {
+        console.log('Feature flag disabled: keeping overlay windows open...')
     }
 })
 
 // Handle window-all-closed event
 app.on('window-all-closed', () => {
-    console.log('All windows closed')
+    console.log('All windows closed, checking feature flag for overlay behavior...')
+    
+    // Check feature flag to determine if overlays should close with app
+    const shouldCloseAllWithMain = loadFeatureFlags()
+    
+    if (shouldCloseAllWithMain) {
+        console.log('Feature flag enabled: closing any remaining overlay windows...')
+        // Close any remaining overlay windows
+        if (overlayWindow && !overlayWindow.isDestroyed()) {
+            overlayWindow.close()
+        }
 
-    // Close any remaining overlay windows
-    if (overlayWindow && !overlayWindow.isDestroyed()) {
-        overlayWindow.close()
-    }
+        if (notesOverlayWindow && !notesOverlayWindow.isDestroyed()) {
+            closeNotesOverlayWindow()
+        }
 
-    if (notesOverlayWindow && !notesOverlayWindow.isDestroyed()) {
-        closeNotesOverlayWindow()
-    }
-
-    if (streakOverlayWindow && !streakOverlayWindow.isDestroyed()) {
-        closeStreakOverlayWindow()
+        if (streakOverlayWindow && !streakOverlayWindow.isDestroyed()) {
+            closeStreakOverlayWindow()
+        }
+    } else {
+        console.log('Feature flag disabled: keeping overlay windows open...')
     }
 
     // On macOS, keep app running even when all windows are closed

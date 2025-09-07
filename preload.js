@@ -57,6 +57,11 @@ contextBridge.exposeInMainWorld('electronAPI', {
     showNotification: (options) =>
         ipcRenderer.invoke('show-notification', options),
     toggleNotesOverlay: () => ipcRenderer.invoke('toggle-notes-overlay'),
+    
+    // Feature flags
+    updateFeatureFlag: (flagName, value) => 
+        ipcRenderer.invoke('update-feature-flag', flagName, value),
+    
     // Listen for events from main process
     onShortcut: (channel, callback) => {
         ipcRenderer.on(channel, callback)
