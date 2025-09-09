@@ -2,13 +2,38 @@ import { useState, useEffect, useCallback } from 'react';
 import useNotifier from './useNotifier';
 
 const useTimer = (initialSettings) => {
+  // Load settings from localStorage or use initial settings
+  const loadSettings = () => {
+    try {
+      const savedSettings = localStorage.getItem('promodor_timer_settings');
+      if (savedSettings) {
+        return JSON.parse(savedSettings);
+      }
+    } catch (error) {
+      console.error('Error loading timer settings from localStorage:', error);
+    }
+    return initialSettings;
+  };
+
   const [minutes, setMinutes] = useState(initialSettings.focusTime);
   const [seconds, setSeconds] = useState(0);
   const [isActive, setIsActive] = useState(false);
   const [mode, setMode] = useState('focus');
   const [cycle, setCycle] = useState(1);
-  const [settings, setSettings] = useState(initialSettings);
+  const [settings, setSettings] = useState(loadSettings);
   const notify = useNotifier();
+
+  // Update minutes when settings change
+  useEffect(() => {
+    if (mode === 'focus') {
+      setMinutes(settings.focusTime);
+    } else if (mode === 'shortBreak') {
+      setMinutes(settings.shortBreakTime);
+    } else if (mode === 'longBreak') {
+      setMinutes(settings.longBreakTime);
+    }
+    setSeconds(0);
+  }, [settings, mode]);
 
   // Timer logic
   useEffect(() => {

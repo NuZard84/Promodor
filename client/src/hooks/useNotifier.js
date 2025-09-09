@@ -6,6 +6,23 @@ import { useCallback } from 'react'
 export default function useNotifier() {
     const notify = useCallback((title, body, options = {}) => {
         try {
+            // Check if notifications are enabled in settings
+            const notificationsEnabled = (() => {
+                try {
+                    const saved = localStorage.getItem('promodor_notifications_enabled');
+                    return saved !== null ? JSON.parse(saved) : true;
+                } catch (error) {
+                    console.error('Error loading notification setting:', error);
+                    return true;
+                }
+            })();
+
+            // If notifications are disabled, don't show them
+            if (!notificationsEnabled) {
+                console.log('Notifications disabled, skipping notification:', title);
+                return;
+            }
+
             const payload = { title, body, ...options }
 
             if (

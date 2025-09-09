@@ -28,6 +28,20 @@ const useNotes = () => {
     localStorage.setItem('overlay-notes', JSON.stringify(notes));
   }, [notes]);
 
+  // Listen for task changes from main app
+  useEffect(() => {
+    const handleStorageChange = (e) => {
+      if (e.key === 'promodor_tasks' && e.newValue) {
+        // Tasks are handled separately, but we can sync them if needed
+        const updatedTasks = JSON.parse(e.newValue);
+        // You can add logic here to sync tasks with notes if needed
+      }
+    };
+
+    window.addEventListener('storage', handleStorageChange);
+    return () => window.removeEventListener('storage', handleStorageChange);
+  }, []);
+
   const addNote = useCallback(() => {
     if (newNote.trim()) {
       const note = {

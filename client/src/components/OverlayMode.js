@@ -1,6 +1,6 @@
-import React, { useState, useEffect, useRef } from 'react'
+import React, { useState, useEffect, useRef, useCallback } from 'react'
 import useNotifier from '../hooks/useNotifier'
-import { RotateCcw, Settings, X, Eye, NotepadTextIcon, Shrimp, Shrink } from 'lucide-react'
+import { RotateCcw, Settings, X, Eye, NotepadTextIcon, Shrink } from 'lucide-react'
 import Lottie from 'lottie-react'
 import ModeSelector from './ModeSelector/ModeSelector'
 import useGlobalShortcuts from '../hooks/useGlobalHooks'
@@ -40,20 +40,48 @@ const polarToCartesian = (centerX, centerY, radius, angleInDegrees) => {
     }
 }
 
-// Simple editable timer values (change here to test quickly)
-const FOCUS_MIN = 1
-const SHORT_BREAK_MIN = 1
-const LONG_BREAK_MIN = 1
-const LONG_BREAK_AFTER = 1
+// Timer values - these will be passed as props from the main app
+// Default values for fallback
+const DEFAULT_FOCUS_MIN = 25
+const DEFAULT_SHORT_BREAK_MIN = 5
+const DEFAULT_LONG_BREAK_MIN = 15
+const DEFAULT_LONG_BREAK_AFTER = 4
 
-// const FOCUS_MIN = 25
-// const SHORT_BREAK_MIN = 5
-// const LONG_BREAK_MIN = 15
-// const LONG_BREAK_AFTER = 4
+const OverlayMode = ({ settings = null }) => {
+    // Use settings from props or fallback to defaults
+    const FOCUS_MIN = settings?.focusTime || DEFAULT_FOCUS_MIN
+    const SHORT_BREAK_MIN = settings?.shortBreakTime || DEFAULT_SHORT_BREAK_MIN
+    const LONG_BREAK_MIN = settings?.longBreakTime || DEFAULT_LONG_BREAK_MIN
+    const LONG_BREAK_AFTER = settings?.longBreakAfter || DEFAULT_LONG_BREAK_AFTER
 
-const OverlayMode = () => {
+    // Load settings from localStorage if no settings provided
+    const [localSettings, setLocalSettings] = useState(() => {
+        if (settings) return settings;
+        try {
+            const savedSettings = localStorage.getItem('promodor_timer_settings');
+            if (savedSettings) {
+                return JSON.parse(savedSettings);
+            }
+        } catch (error) {
+            console.error('Error loading settings from localStorage:', error);
+        }
+        return {
+            focusTime: DEFAULT_FOCUS_MIN,
+            shortBreakTime: DEFAULT_SHORT_BREAK_MIN,
+            longBreakTime: DEFAULT_LONG_BREAK_MIN,
+            longBreakAfter: DEFAULT_LONG_BREAK_AFTER
+        };
+    });
+
+    // Use local settings if no props provided
+    const currentSettings = settings || localSettings;
+    const currentFOCUS_MIN = currentSettings.focusTime || DEFAULT_FOCUS_MIN;
+    const currentSHORT_BREAK_MIN = currentSettings.shortBreakTime || DEFAULT_SHORT_BREAK_MIN;
+    const currentLONG_BREAK_MIN = currentSettings.longBreakTime || DEFAULT_LONG_BREAK_MIN;
+    const currentLONG_BREAK_AFTER = currentSettings.longBreakAfter || DEFAULT_LONG_BREAK_AFTER;
+
     // Timer state
-    const [minutes, setMinutes] = useState(FOCUS_MIN)
+    const [minutes, setMinutes] = useState(currentFOCUS_MIN)
     const [seconds, setSeconds] = useState(0)
     const [isActive, setIsActive] = useState(false)
     const [mode, setMode] = useState('focus')
@@ -61,10 +89,30 @@ const OverlayMode = () => {
     const [isClickThrough, setIsClickThrough] = useState(false)
     const [autoHyperMode, setAutoHyperMode] = useState(false)
 
+    // Listen for settings changes from localStorage
+    useEffect(() => {
+        const handleStorageChange = (e) => {
+            if (e.key === 'promodor_timer_settings') {
+                try {
+                    const newSettings = JSON.parse(e.newValue);
+                    setLocalSettings(newSettings);
+                } catch (error) {
+                    console.error('Error parsing settings from storage:', error);
+                }
+            }
+        };
+
+        window.addEventListener('storage', handleStorageChange);
+        return () => window.removeEventListener('storage', handleStorageChange);
+    }, []);
+
     // Lottie animation ref
     const lottieRef = useRef()
 
     const notify = useNotifier()
+    
+    // Get the global shortcuts hook first
+    const { hyperMode, superHyperMode, disableHyperMode } = useGlobalShortcuts()
 
     // Handle hover events for Lottie animation
     const handleMouseEnter = () => {
@@ -78,6 +126,59 @@ const OverlayMode = () => {
             lottieRef.current.stop()
         }
     }
+
+    // Define resetTimer first as it's used by handleTimerComplete
+    const resetTimer = useCallback(() => {
+        setIsActive(false)
+        if (mode === 'focus') {
+            setMode('shortBreak')
+            setMinutes(currentSHORT_BREAK_MIN)
+        } else if (mode === 'shortBreak') {
+            setMode('focus')
+            setMinutes(currentFOCUS_MIN)
+        } else {
+            setMode('focus')
+            setMinutes(currentFOCUS_MIN)
+        }
+        setSeconds(0)
+    }, [mode, currentSHORT_BREAK_MIN, currentFOCUS_MIN])
+
+    // Define handleTimerComplete after resetTimer
+    const handleTimerComplete = useCallback(() => {
+        const prevMode = mode
+        const wasFocus = mode === 'focus'
+        resetTimer()
+        disableHyperMode() // This will also disable super hyper mode
+        if (wasFocus) {
+            setCycle((prev) => prev + 1)
+            try {
+                completeFocusCycleToday()
+            } catch {}
+            // Focus just completed → going to short break (by design here)
+            notify(
+                'Focus complete',
+                `Time for a short break (${currentSHORT_BREAK_MIN} min).`
+            )
+        } else if (prevMode === 'shortBreak') {
+            // Short break ended → back to focus
+            notify('Short break over', 'Back to focus!')
+        } else if (prevMode === 'longBreak') {
+            // Long break ended → back to focus
+            notify('Long break over', 'Back to focus!')
+        }
+    }, [mode, resetTimer, disableHyperMode, notify, currentSHORT_BREAK_MIN])
+
+    // Update timer values when settings change
+    useEffect(() => {
+        if (mode === 'focus') {
+            setMinutes(currentFOCUS_MIN)
+        } else if (mode === 'shortBreak') {
+            setMinutes(currentSHORT_BREAK_MIN)
+        } else if (mode === 'longBreak') {
+            setMinutes(currentLONG_BREAK_MIN)
+        }
+        setSeconds(0)
+    }, [currentFOCUS_MIN, currentSHORT_BREAK_MIN, currentLONG_BREAK_MIN, mode])
 
     // Timer logic
     useEffect(() => {
@@ -99,31 +200,7 @@ const OverlayMode = () => {
         return () => clearInterval(interval)
     }, [isActive, seconds, minutes, handleTimerComplete])
 
-    function handleTimerComplete() {
-        const prevMode = mode
-        const wasFocus = mode === 'focus'
-        resetTimer()
-        disableHyperMode() // This will also disable super hyper mode
-        if (wasFocus) {
-            setCycle((prev) => prev + 1)
-            try {
-                completeFocusCycleToday()
-            } catch {}
-            // Focus just completed → going to short break (by design here)
-            notify(
-                'Focus complete',
-                `Time for a short break (${SHORT_BREAK_MIN} min).`
-            )
-        } else if (prevMode === 'shortBreak') {
-            // Short break ended → back to focus
-            notify('Short break over', 'Back to focus!')
-        } else if (prevMode === 'longBreak') {
-            // Long break ended → back to focus
-            notify('Long break over', 'Back to focus!')
-        }
-    }
-
-    const toggleTimer = () => {
+    const toggleTimer = useCallback(() => {
         const newActiveState = !isActive
         
         // If starting the timer and auto hyper mode is enabled, enable super hyper mode
@@ -135,29 +212,29 @@ const OverlayMode = () => {
         }
         
         setIsActive(newActiveState)
-    }
-    function resetTimer() {
+    }, [isActive, autoHyperMode, superHyperMode])
+
+    // New function for just resetting the current mode without changing it
+    const resetCurrentMode = useCallback(() => {
+        console.log('Resetting current mode:', mode)
         setIsActive(false)
         if (mode === 'focus') {
-            setMode('shortBreak')
-            setMinutes(SHORT_BREAK_MIN)
+            setMinutes(currentFOCUS_MIN)
         } else if (mode === 'shortBreak') {
-            setMode('focus')
-            setMinutes(FOCUS_MIN)
-        } else {
-            setMode('focus')
-            setMinutes(FOCUS_MIN)
+            setMinutes(currentSHORT_BREAK_MIN)
+        } else if (mode === 'longBreak') {
+            setMinutes(currentLONG_BREAK_MIN)
         }
         setSeconds(0)
-    }
+    }, [mode, currentFOCUS_MIN, currentSHORT_BREAK_MIN, currentLONG_BREAK_MIN])
 
-    const toggleClickThrough = () => {
+    const toggleClickThrough = useCallback(() => {
         const newState = !isClickThrough
         setIsClickThrough(newState)
         if (window.electronAPI) {
             window.electronAPI.toggleClickThrough(newState)
         }
-    }
+    }, [isClickThrough])
 
     const closeOverlay = () => {
         if (window.electronAPI) {
@@ -222,7 +299,7 @@ const OverlayMode = () => {
                     color: '#FF6B47',
                     glowColor: 'rgba(255, 107, 71, 0.4)',
                     icon: '👁️',
-                    totalTime: FOCUS_MIN * 60,
+                    totalTime: currentFOCUS_MIN * 60,
                 }
             case 'shortBreak':
                 return {
@@ -230,7 +307,7 @@ const OverlayMode = () => {
                     color: '#4ECDC4',
                     glowColor: 'rgba(78, 205, 196, 0.4)',
                     icon: '☕',
-                    totalTime: SHORT_BREAK_MIN * 60,
+                    totalTime: currentSHORT_BREAK_MIN * 60,
                 }
             case 'longBreak':
                 return {
@@ -238,7 +315,7 @@ const OverlayMode = () => {
                     color: '#5D7D9A',
                     glowColor: 'rgba(78, 205, 196, 0.9)',
                     icon: '🛋️',
-                    totalTime: LONG_BREAK_MIN * 60,
+                    totalTime: currentLONG_BREAK_MIN * 60,
                 }
             default:
                 return {
@@ -246,11 +323,10 @@ const OverlayMode = () => {
                     color: '#FF6B47',
                     glowColor: 'rgba(255, 107, 71, 0.4)',
                     icon: '👁️',
-                    totalTime: FOCUS_MIN * 60,
+                    totalTime: currentFOCUS_MIN * 60,
                 }
         }
     }
-    const { hyperMode, superHyperMode, disableHyperMode } = useGlobalShortcuts()
 
     useEffect(() => {
         console.log(
@@ -260,6 +336,44 @@ const OverlayMode = () => {
             superHyperMode
         )
     }, [hyperMode, superHyperMode])
+
+    // Add event listeners for global shortcuts
+    useEffect(() => {
+        const handleToggleTimer = () => {
+            toggleTimer()
+        }
+
+        const handleResetTimer = () => {
+            console.log('Reset timer event received in OverlayMode')
+            resetCurrentMode()
+        }
+
+        const handleSetMode = (event, newMode) => {
+            setMode(newMode)
+            if (newMode === 'focus') {
+                setMinutes(currentFOCUS_MIN)
+            } else if (newMode === 'shortBreak') {
+                setMinutes(currentSHORT_BREAK_MIN)
+            } else if (newMode === 'longBreak') {
+                setMinutes(currentLONG_BREAK_MIN)
+            }
+            setSeconds(0)
+            setIsActive(false)
+        }
+
+        // Listen for IPC events
+        if (window.electronAPI) {
+            const cleanup1 = window.electronAPI.onToggleTimer?.(handleToggleTimer)
+            const cleanup2 = window.electronAPI.onResetTimer?.(handleResetTimer)
+            const cleanup3 = window.electronAPI.onSetMode?.(handleSetMode)
+
+            return () => {
+                cleanup1?.()
+                cleanup2?.()
+                cleanup3?.()
+            }
+        }
+    }, [toggleTimer, resetCurrentMode])
     const modeInfo = getModeInfo()
     const currentTimeInSeconds = minutes * 60 + seconds
 
@@ -277,19 +391,19 @@ const OverlayMode = () => {
         setMode(newMode)
         setIsActive(false)
 
-        // Reset timer based on new mode using simple constants
+        // Reset timer based on new mode using current settings
         switch (newMode) {
             case 'focus':
-                setMinutes(FOCUS_MIN)
+                setMinutes(currentFOCUS_MIN)
                 break
             case 'shortBreak':
-                setMinutes(SHORT_BREAK_MIN)
+                setMinutes(currentSHORT_BREAK_MIN)
                 break
             case 'longBreak':
-                setMinutes(LONG_BREAK_MIN)
+                setMinutes(currentLONG_BREAK_MIN)
                 break
             default:
-                setMinutes(FOCUS_MIN)
+                setMinutes(currentFOCUS_MIN)
         }
         setSeconds(0)
     }
@@ -365,7 +479,7 @@ const OverlayMode = () => {
         >
             {/* Top Controls */}
             <div
-                className="hidden flex justify-between items-center mb-4"
+                className="hidden justify-between items-center mb-4"
                 style={{
                     WebkitAppRegion: isClickThrough ? 'no-drag' : 'drag',
                     pointerEvents: isClickThrough ? 'none' : 'auto',
@@ -496,7 +610,7 @@ const OverlayMode = () => {
                                         className="font-semibold"
                                         style={{ color: '#FF6B47' }}
                                     >
-                                        {cycle * FOCUS_MIN}⏱️
+                                        {cycle * currentFOCUS_MIN}⏱️
                                     </p>
                                 </div>
                             </>
@@ -587,7 +701,7 @@ const OverlayMode = () => {
                 {/* Settings Button */}
                 <button
                     onClick={openMainWindow}
-                    className="hidden w-8 h-8 rounded-full bg-white bg-opacity-10 hover:bg-opacity-20 text-white text-opacity-60 hover:text-opacity-100 transition-all flex items-center justify-center"
+                    className="hidden w-8 h-8 rounded-full bg-white bg-opacity-10 hover:bg-opacity-20 text-white text-opacity-60 hover:text-opacity-100 transition-all items-center justify-center"
                     style={{
                         border: '1px solid rgba(255, 255, 255, 0.1)',
                     }}

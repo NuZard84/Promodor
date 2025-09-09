@@ -1,5 +1,5 @@
 import React, { useState } from 'react'
-import { useNotes, useOverlay } from '../hooks'
+import { useUnifiedItems, useOverlay } from '../hooks'
 import { NotesHeader, NotesInput, NotesList } from './Notes'
 import FilterButton from './FilterButton/FilterButton'
 
@@ -10,9 +10,12 @@ const NotesOverlay = () => {
     const [showFilters, setShowFilters] = useState(false)
 
     const {
+        items,
         notes,
-        newNote,
-        setNewNote,
+        tasks,
+        completedTasks,
+        newItem,
+        setNewItem,
         editingId,
         editingText,
         setEditingText,
@@ -20,15 +23,18 @@ const NotesOverlay = () => {
         setShowInput,
         selectedColor,
         setSelectedColor,
-        colors, // Get colors from hook
-        addNote,
+        itemType,
+        setItemType,
+        colors,
+        addItem,
         startEditing,
         saveEdit,
         cancelEdit,
-        deleteNote,
-        deleteAllNotes,
+        deleteItem,
+        deleteAllItems,
+        toggleTask,
         handleKeyPress,
-    } = useNotes()
+    } = useUnifiedItems()
 
     const { isClickThrough, toggleClickThrough, closeOverlay, openMainWindow } =
         useOverlay()
@@ -63,8 +69,8 @@ const NotesOverlay = () => {
                 }
                 DeleteAllNotes={
                     <DeleteAllNotesComponent
-                        deleteAllNotes={deleteAllNotes}
-                        notes={notes}
+                        deleteAllNotes={deleteAllItems}
+                        notes={items}
                     />
                 }
             />
@@ -76,34 +82,37 @@ const NotesOverlay = () => {
                 <NotesInput
                     showInput={showInput}
                     setShowInput={setShowInput}
-                    newNote={newNote}
-                    setNewNote={setNewNote}
-                    addNote={addNote}
+                    newNote={newItem}
+                    setNewNote={setNewItem}
+                    addNote={addItem}
                     handleKeyPress={handleKeyPress}
                     isClickThrough={isClickThrough}
                     selectedColor={selectedColor}
                     setSelectedColor={setSelectedColor}
-                    colors={colors} // Pass colors to NotesInput
+                    colors={colors}
+                    itemType={itemType}
+                    setItemType={setItemType}
                 />
             </div>
 
             {/* Notes List */}
             <NotesList
-                notes={notes}
+                notes={items}
                 editingId={editingId}
                 editingText={editingText}
                 setEditingText={setEditingText}
                 startEditing={startEditing}
                 saveEdit={saveEdit}
                 cancelEdit={cancelEdit}
-                deleteNote={deleteNote}
+                deleteNote={deleteItem}
                 handleKeyPress={handleKeyPress}
                 isClickThrough={isClickThrough}
                 selectedFilter={selectedFilter}
                 setSelectedFilter={setSelectedFilter}
+                toggleTask={toggleTask}
             />
             <PriorityCounter
-                notes={notes}
+                notes={items}
                 colors={colors}
                 selectedFilter={selectedFilter}
                 setSelectedFilter={setSelectedFilter}

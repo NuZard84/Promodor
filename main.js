@@ -565,14 +565,34 @@ function toggleFocusMode() {
 }
 
 function registerGlobalShortcuts() {
+    console.log('Registering global shortcuts...')
+    
+    // Check if global shortcuts are supported
+    if (!globalShortcut.isRegistered) {
+        console.error('Global shortcuts not supported on this platform')
+        return
+    }
+    
+    // Clear any existing shortcuts first
+    globalShortcut.unregisterAll()
+    console.log('Cleared existing global shortcuts')
+    
+    // Test shortcut removed - system is working
+    
     // Global shortcuts for overlay mode
-    globalShortcut.register('CmdOrCtrl+Shift+P', () => {
-        if (overlayWindow) {
-            overlayWindow.webContents.send('toggle-timer')
-        } else if (mainWindow) {
-            mainWindow.webContents.send('toggle-timer')
-        }
-    })
+    try {
+        const pResult = globalShortcut.register('CmdOrCtrl+Shift+P', () => {
+            console.log('Ctrl+Shift+P triggered')
+            if (overlayWindow) {
+                overlayWindow.webContents.send('toggle-timer')
+            } else if (mainWindow) {
+                mainWindow.webContents.send('toggle-timer')
+            }
+        })
+        console.log('Ctrl+Shift+P registration result:', pResult)
+    } catch (error) {
+        console.error('Error registering Ctrl+Shift+P:', error)
+    }
 
     // Add global shortcut for click-through toggle
     globalShortcut.register('CmdOrCtrl+Shift+C', () => {
@@ -609,10 +629,59 @@ function registerGlobalShortcuts() {
         }
     })
 
-    // Focus mode toggle
-    globalShortcut.register('CmdOrCtrl+Alt+F', () => {
-        if (mainWindow) {
-            toggleFocusMode()
+    // Timer control shortcuts
+    try {
+        const spaceResult = globalShortcut.register('CmdOrCtrl+Shift+Space', () => {
+            console.log('Ctrl+Shift+Space triggered - Toggle Timer')
+            if (overlayWindow) {
+                overlayWindow.webContents.send('toggle-timer')
+            } else if (mainWindow) {
+                mainWindow.webContents.send('toggle-timer')
+            }
+        })
+        console.log('Ctrl+Shift+Space registration result:', spaceResult)
+    } catch (error) {
+        console.error('Error registering Ctrl+Shift+Space:', error)
+    }
+
+    try {
+        const zResult = globalShortcut.register('CmdOrCtrl+Shift+Z', () => {
+            console.log('Ctrl+Shift+Z shortcut triggered - Reset Timer')
+            if (overlayWindow) {
+                console.log('Sending reset-timer to overlay window')
+                overlayWindow.webContents.send('reset-timer')
+            } else if (mainWindow) {
+                console.log('Sending reset-timer to main window')
+                mainWindow.webContents.send('reset-timer')
+            }
+        })
+        console.log('Ctrl+Shift+Z registration result:', zResult)
+    } catch (error) {
+        console.error('Error registering Ctrl+Shift+Z:', error)
+    }
+
+    // Mode switching shortcuts
+    globalShortcut.register('CmdOrCtrl+Shift+1', () => {
+        if (overlayWindow) {
+            overlayWindow.webContents.send('set-mode', 'focus')
+        } else if (mainWindow) {
+            mainWindow.webContents.send('set-mode', 'focus')
+        }
+    })
+
+    globalShortcut.register('CmdOrCtrl+Shift+2', () => {
+        if (overlayWindow) {
+            overlayWindow.webContents.send('set-mode', 'shortBreak')
+        } else if (mainWindow) {
+            mainWindow.webContents.send('set-mode', 'shortBreak')
+        }
+    })
+
+    globalShortcut.register('CmdOrCtrl+Shift+3', () => {
+        if (overlayWindow) {
+            overlayWindow.webContents.send('set-mode', 'longBreak')
+        } else if (mainWindow) {
+            mainWindow.webContents.send('set-mode', 'longBreak')
         }
     })
 
@@ -1159,7 +1228,11 @@ app.whenReady().then(() => {
     console.log('Electron version:', process.versions.electron)
 
     createWindow() // Start with main window
-    registerGlobalShortcuts()
+    
+    // Register shortcuts after a short delay to ensure app is ready
+    setTimeout(() => {
+        registerGlobalShortcuts()
+    }, 1000)
 
     // Start the position maintenance system
     setTimeout(() => maintainStreakOverlayPosition(), 2000)

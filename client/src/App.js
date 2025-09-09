@@ -16,7 +16,7 @@ import {
   Sun,
   User
 } from 'lucide-react';
-import { useTimer, useTasks, useTheme } from './hooks';
+import { useTimer, useTasks, useNotifier } from './hooks';
 import {
   OverlayMode,
   NotesOverlay,
@@ -46,11 +46,8 @@ const App = () => {
     mode,
     cycle,
     settings,
-    toggleTimer,
     resetTimer,
-    setModeAndReset,
-    updateSettings,
-    setCycle
+    updateSettings
   } = useTimer(initialSettings);
 
   const {
@@ -72,6 +69,10 @@ const App = () => {
   const [showHelpMenu, setShowHelpMenu] = useState(false);
   const [isDarkMode, setIsDarkMode] = useState(false);
   const [closeAllWithMain, setCloseAllWithMain] = useState(featureFlags.closeAllWithMain);
+  const [showDevOverlay, setShowDevOverlay] = useState(() => {
+    const saved = localStorage.getItem('promodor_dev_overlay_dismissed');
+    return saved !== 'true';
+  });
   
   // Streak state
   const [currentStreak, setCurrentStreak] = useState(0);
@@ -86,7 +87,6 @@ const App = () => {
     { id: 'tasks', label: 'Tasks', icon: CheckSquare },
     { id: 'stats', label: 'Statistics', icon: BarChart3 },
     { id: 'notifications', label: 'Notifications', icon: Bell },
-    { id: 'sounds', label: 'Sounds', icon: Volume2 },
     { id: 'shortcuts', label: 'Shortcuts', icon: Keyboard },
   ];
 
@@ -222,6 +222,9 @@ const App = () => {
         case 'streak':
           window.electronAPI.createStreakOverlay?.();
           break;
+        default:
+          console.warn('Unknown overlay type:', type);
+          break;
       }
     }
   };
@@ -269,7 +272,7 @@ const App = () => {
 
   // Render overlay components if in overlay mode
   if (isOverlayMode) {
-    return <OverlayMode />;
+    return <OverlayMode settings={settings} />;
   }
 
   if (isNotesOverlayMode) {
@@ -324,8 +327,6 @@ const App = () => {
         />;
       case 'notifications':
         return <NotificationsContent isDarkMode={isDarkMode} />;
-      case 'sounds':
-        return <SoundsContent isDarkMode={isDarkMode} />;
       case 'shortcuts':
         return <ShortcutsContent isDarkMode={isDarkMode} />;
       default:
@@ -616,6 +617,62 @@ const App = () => {
         </div>
       </div>
 
+      {/* Development Status Overlay */}
+      {showDevOverlay && (
+        <div className="fixed top-4 right-4 z-50 max-w-sm">
+          <div className={`${isDarkMode ? 'bg-orange-900/90 border-orange-700' : 'bg-orange-100 border-orange-300'} border rounded-xl p-4 shadow-lg`}>
+            <div className="flex items-start gap-3">
+              <div className="w-8 h-8 rounded-full bg-orange-500 flex items-center justify-center flex-shrink-0 mt-0.5">
+                <Timer className="w-4 h-4 text-white" />
+              </div>
+              <div className="flex-1">
+                <h3 className={`font-semibold ${isDarkMode ? 'text-orange-200' : 'text-orange-800'} mb-1`}>
+                  Development Mode
+                </h3>
+                <p className={`text-sm ${isDarkMode ? 'text-orange-300' : 'text-orange-700'} mb-3`}>
+                  Your data is currently saved locally. Profile features and cloud sync are coming soon!
+                </p>
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => setShowDevOverlay(false)}
+                    className={`px-3 py-1.5 text-xs font-medium rounded-lg transition-colors ${
+                      isDarkMode 
+                        ? 'bg-orange-800 hover:bg-orange-700 text-orange-200' 
+                        : 'bg-orange-200 hover:bg-orange-300 text-orange-800'
+                    }`}
+                  >
+                    Got it
+                  </button>
+                  <button
+                    onClick={() => {
+                      setShowDevOverlay(false);
+                      localStorage.setItem('promodor_dev_overlay_dismissed', 'true');
+                    }}
+                    className={`px-3 py-1.5 text-xs font-medium rounded-lg transition-colors ${
+                      isDarkMode 
+                        ? 'text-orange-400 hover:text-orange-300' 
+                        : 'text-orange-600 hover:text-orange-700'
+                    }`}
+                  >
+                    Don't show again
+                  </button>
+                </div>
+              </div>
+              <button
+                onClick={() => setShowDevOverlay(false)}
+                className={`w-6 h-6 rounded-full flex items-center justify-center transition-colors ${
+                  isDarkMode 
+                    ? 'hover:bg-orange-800 text-orange-400' 
+                    : 'hover:bg-orange-200 text-orange-600'
+                }`}
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Click outside to close menus */}
       {(showFileMenu || showEditMenu || showViewMenu || showHelpMenu) && (
         <div
@@ -640,8 +697,7 @@ const getTabDescription = (tab) => {
     stats: 'Track your progress and statistics',
     profile: 'Manage your profile and preferences',
     settings: 'Timer and app preferences',
-    notifications: 'Notification preferences',
-    sounds: 'Audio settings',
+    notifications: 'Notification and sound preferences',
     shortcuts: 'Keyboard shortcuts'
   };
   return descriptions[tab] || '';
@@ -768,11 +824,49 @@ const StatsContent = ({
   onSimulateConsecutiveDays
 }) => {
   const completedTasksList = tasks.filter(task => task.completed);
+  
+  // Check if we're in development mode and Electron is available
+  const isDevelopmentMode = process.env.NODE_ENV === 'development' || 
+                           process.env.NODE_ENV === 'dev' || 
+                           window.location.hostname === 'localhost' ||
+                           window.location.hostname === '127.0.0.1';
+  const isElectronAvailable = typeof window !== 'undefined' && window.electronAPI;
+  const showTestPanel = isDevelopmentMode && isElectronAvailable;
+  
+  // Debug logging for development mode detection
+  if (process.env.NODE_ENV === 'development') {
+    console.log('Development mode detection:', {
+      NODE_ENV: process.env.NODE_ENV,
+      hostname: window.location.hostname,
+      isDevelopmentMode,
+      isElectronAvailable,
+      showTestPanel
+    });
+  }
 
   return (
     <div className="space-y-6">
-      {/* Stats Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+      {/* Coming Soon Notice */}
+      <div className={`${isDarkMode ? 'bg-yellow-900/20 border-yellow-700' : 'bg-yellow-50 border-yellow-200'
+        } rounded-2xl p-6 border`}>
+        <div className="flex items-center gap-4">
+          <div className="w-12 h-12 rounded-xl bg-yellow-500 flex items-center justify-center">
+            <BarChart3 className="w-6 h-6 text-white" />
+          </div>
+          <div>
+            <h3 className={`text-lg font-semibold ${isDarkMode ? 'text-yellow-200' : 'text-yellow-800'
+              } mb-1`}>Statistics Coming Soon</h3>
+            <p className={`text-sm ${isDarkMode ? 'text-yellow-300' : 'text-yellow-700'
+              }`}>
+              Advanced statistics and analytics features are currently under development. 
+              Basic stats are shown below as a preview.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      {/* Basic Stats Preview */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 opacity-60">
         <div className={`${isDarkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'
           } rounded-2xl p-6 border`}>
           <div className="flex items-center gap-4">
@@ -875,16 +969,17 @@ const StatsContent = ({
         </div>
       </div>
 
-      {/* Enhanced Test Panel for Frozen Streak System */}
-      <div className={`${isDarkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'
-        } rounded-2xl p-6 border`}>
-        <h3 className={`text-lg font-semibold ${isDarkMode ? 'text-white' : 'text-gray-800'
-          } mb-4 flex items-center gap-2`}>
-          <div className="w-6 h-6 rounded-lg bg-yellow-100 dark:bg-yellow-900/20 flex items-center justify-center">
-            <div className="w-4 h-4 rounded-full bg-yellow-400"></div>
-          </div>
-          Frozen Streak Test Panel
-        </h3>
+      {/* Enhanced Test Panel for Frozen Streak System - Development Only */}
+      {showTestPanel && (
+        <div className={`${isDarkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'
+          } rounded-2xl p-6 border`}>
+          <h3 className={`text-lg font-semibold ${isDarkMode ? 'text-white' : 'text-gray-800'
+            } mb-4 flex items-center gap-2`}>
+            <div className="w-6 h-6 rounded-lg bg-yellow-100 dark:bg-yellow-900/20 flex items-center justify-center">
+              <div className="w-4 h-4 rounded-full bg-yellow-400"></div>
+            </div>
+            Frozen Streak Test Panel (Development)
+          </h3>
         
         <div className={`${isDarkMode ? 'bg-gray-700' : 'bg-gray-50'} rounded-xl p-4`}>
           <h4 className={`font-medium ${isDarkMode ? 'text-white' : 'text-gray-800'} mb-3`}>
@@ -1016,7 +1111,30 @@ const StatsContent = ({
             </div>
           </div>
         </div>
-      </div>
+        </div>
+      )}
+
+      {/* Development Mode Notice */}
+      {!showTestPanel && (
+        <div className={`${isDarkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'
+          } rounded-2xl p-6 border`}>
+          <div className="flex items-center gap-4">
+            <div className="w-12 h-12 rounded-xl bg-gray-500 flex items-center justify-center">
+              <BarChart3 className="w-6 h-6 text-white" />
+            </div>
+            <div>
+              <h3 className={`text-lg font-semibold ${isDarkMode ? 'text-white' : 'text-gray-800'
+                } mb-1`}>Test Panel Unavailable</h3>
+              <p className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-600'
+                }`}>
+                The frozen streak test panel is only available in development mode with Electron. 
+                {!isDevelopmentMode && ' (Not in development mode)'}
+                {!isElectronAvailable && ' (Electron not available)'}
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Progress Chart Placeholder */}
       <div className={`${isDarkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'
@@ -1109,81 +1227,253 @@ const OverlaysContent = ({ createOverlay, isDarkMode }) => (
 );
 
 // Settings Content Component
-const SettingsContent = ({ settings, updateSettings, isDarkMode, closeAllWithMain, updateFeatureFlag }) => (
-  <div className="space-y-6">
-    <div className={`${isDarkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'
-      } rounded-2xl p-8 border`}>
-      <h3 className={`text-2xl font-bold ${isDarkMode ? 'text-white' : 'text-gray-800'
-        } mb-6`}>Timer Settings</h3>
+const SettingsContent = ({ settings, updateSettings, isDarkMode, closeAllWithMain, updateFeatureFlag }) => {
+  const [tempSettings, setTempSettings] = useState(settings);
+  const [hasChanges, setHasChanges] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  const [showOverlayNote, setShowOverlayNote] = useState(false);
+  const [timeoutId, setTimeoutId] = useState(null);
+  const notify = useNotifier();
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <div>
-          <label className={`block text-sm font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-700'
-            } mb-2`}>
-            Focus Time (minutes)
-          </label>
-          <input
-            type="number"
-            value={settings.focusTime}
-            onChange={(e) => updateSettings({ ...settings, focusTime: parseInt(e.target.value) })}
-            className={`w-full px-4 py-3 border rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-500 ${isDarkMode
-              ? 'bg-gray-700 border-gray-600 text-white'
-              : 'bg-white border-gray-200 text-gray-900'
-              }`}
-          />
+  // Update temp settings when settings prop changes
+  useEffect(() => {
+    setTempSettings(settings);
+    setHasChanges(false);
+  }, [settings]);
+
+  // Cleanup timeout on unmount
+  useEffect(() => {
+    return () => {
+      if (timeoutId) {
+        clearTimeout(timeoutId);
+      }
+    };
+  }, [timeoutId]);
+
+  // Check if there are changes
+  const checkForChanges = (newSettings) => {
+    const changed = Object.keys(newSettings).some(key => 
+      newSettings[key] !== settings[key]
+    );
+    setHasChanges(changed);
+  };
+
+  // Handle input changes
+  const handleInputChange = (field, value) => {
+    const newSettings = { ...tempSettings, [field]: parseInt(value) || 0 };
+    setTempSettings(newSettings);
+    checkForChanges(newSettings);
+    
+    // Show overlay note when timer settings change
+    if (['focusTime', 'shortBreakTime', 'longBreakTime', 'longBreakAfter'].includes(field)) {
+      // Clear existing timeout
+      if (timeoutId) {
+        clearTimeout(timeoutId);
+      }
+      
+      setShowOverlayNote(true);
+      // Auto-hide after 4 seconds
+      const newTimeoutId = setTimeout(() => {
+        setShowOverlayNote(false);
+        setTimeoutId(null);
+      }, 4000);
+      setTimeoutId(newTimeoutId);
+    }
+  };
+
+  // Save settings
+  const handleSave = async () => {
+    setIsSaving(true);
+    try {
+      // Clear timeout and hide overlay note
+      if (timeoutId) {
+        clearTimeout(timeoutId);
+        setTimeoutId(null);
+      }
+      setShowOverlayNote(false);
+      
+      // Update the main app settings
+      updateSettings(tempSettings);
+      
+      // Save to localStorage for persistence
+      localStorage.setItem('promodor_timer_settings', JSON.stringify(tempSettings));
+      
+      setHasChanges(false);
+      
+      // Show success notification
+      notify('Settings Saved', 'Timer settings have been updated successfully!');
+    } catch (error) {
+      console.error('Error saving settings:', error);
+      notify('Error', 'Failed to save settings. Please try again.');
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  // Reset to original settings
+  const handleReset = () => {
+    // Clear timeout and hide overlay note
+    if (timeoutId) {
+      clearTimeout(timeoutId);
+      setTimeoutId(null);
+    }
+    setShowOverlayNote(false);
+    
+    setTempSettings(settings);
+    setHasChanges(false);
+  };
+
+  return (
+    <div className="space-y-6">
+      <div className={`${isDarkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'
+        } rounded-2xl p-8 border`}>
+        <div className="flex items-center justify-between mb-6">
+          <h3 className={`text-2xl font-bold ${isDarkMode ? 'text-white' : 'text-gray-800'
+            }`}>Timer Settings</h3>
+          {hasChanges && (
+            <div className="flex gap-2">
+              <button
+                onClick={handleReset}
+                className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                  isDarkMode 
+                    ? 'bg-gray-600 hover:bg-gray-500 text-gray-300' 
+                    : 'bg-gray-200 hover:bg-gray-300 text-gray-700'
+                }`}
+              >
+                Reset
+              </button>
+              <button
+                onClick={handleSave}
+                disabled={isSaving}
+                className="px-4 py-2 bg-orange-500 hover:bg-orange-600 disabled:bg-orange-400 disabled:cursor-not-allowed text-white rounded-lg text-sm font-medium transition-colors flex items-center gap-2"
+              >
+                {isSaving ? (
+                  <>
+                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                    Saving...
+                  </>
+                ) : (
+                  'Save Changes'
+                )}
+              </button>
+            </div>
+          )}
         </div>
 
-        <div>
-          <label className={`block text-sm font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-700'
-            } mb-2`}>
-            Short Break (minutes)
-          </label>
-          <input
-            type="number"
-            value={settings.shortBreakTime}
-            onChange={(e) => updateSettings({ ...settings, shortBreakTime: parseInt(e.target.value) })}
-            className={`w-full px-4 py-3 border rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-500 ${isDarkMode
-              ? 'bg-gray-700 border-gray-600 text-white'
-              : 'bg-white border-gray-200 text-gray-900'
-              }`}
-          />
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div>
+            <label className={`block text-sm font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-700'
+              } mb-2`}>
+              Focus Time (minutes)
+            </label>
+            <input
+              type="number"
+              min="1"
+              max="120"
+              value={tempSettings.focusTime}
+              onChange={(e) => handleInputChange('focusTime', e.target.value)}
+              className={`w-full px-4 py-3 border rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-500 ${isDarkMode
+                ? 'bg-gray-700 border-gray-600 text-white'
+                : 'bg-white border-gray-200 text-gray-900'
+                }`}
+            />
+          </div>
+
+          <div>
+            <label className={`block text-sm font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-700'
+              } mb-2`}>
+              Short Break (minutes)
+            </label>
+            <input
+              type="number"
+              min="1"
+              max="60"
+              value={tempSettings.shortBreakTime}
+              onChange={(e) => handleInputChange('shortBreakTime', e.target.value)}
+              className={`w-full px-4 py-3 border rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-500 ${isDarkMode
+                ? 'bg-gray-700 border-gray-600 text-white'
+                : 'bg-white border-gray-200 text-gray-900'
+                }`}
+            />
+          </div>
+
+          <div>
+            <label className={`block text-sm font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-700'
+              } mb-2`}>
+              Long Break (minutes)
+            </label>
+            <input
+              type="number"
+              min="1"
+              max="120"
+              value={tempSettings.longBreakTime}
+              onChange={(e) => handleInputChange('longBreakTime', e.target.value)}
+              className={`w-full px-4 py-3 border rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-500 ${isDarkMode
+                ? 'bg-gray-700 border-gray-600 text-white'
+                : 'bg-white border-gray-200 text-gray-900'
+                }`}
+            />
+          </div>
+
+          <div>
+            <label className={`block text-sm font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-700'
+              } mb-2`}>
+              Long Break After (cycles)
+            </label>
+            <input
+              type="number"
+              min="1"
+              max="20"
+              value={tempSettings.longBreakAfter}
+              onChange={(e) => handleInputChange('longBreakAfter', e.target.value)}
+              className={`w-full px-4 py-3 border rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-500 ${isDarkMode
+                ? 'bg-gray-700 border-gray-600 text-white'
+                : 'bg-white border-gray-200 text-gray-900'
+                }`}
+            />
+          </div>
         </div>
 
-        <div>
-          <label className={`block text-sm font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-700'
-            } mb-2`}>
-            Long Break (minutes)
-          </label>
-          <input
-            type="number"
-            value={settings.longBreakTime}
-            onChange={(e) => updateSettings({ ...settings, longBreakTime: parseInt(e.target.value) })}
-            className={`w-full px-4 py-3 border rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-500 ${isDarkMode
-              ? 'bg-gray-700 border-gray-600 text-white'
-              : 'bg-white border-gray-200 text-gray-900'
-              }`}
-          />
+        {/* Settings Preview */}
+        <div className={`mt-6 p-4 ${isDarkMode ? 'bg-gray-700' : 'bg-gray-50'} rounded-xl`}>
+          <h4 className={`text-sm font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-600'} mb-2`}>
+            Current Settings Preview
+          </h4>
+          <div className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+            Focus: {tempSettings.focusTime}min • Short Break: {tempSettings.shortBreakTime}min • 
+            Long Break: {tempSettings.longBreakTime}min • Long Break After: {tempSettings.longBreakAfter} cycles
+          </div>
         </div>
 
-        <div>
-          <label className={`block text-sm font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-700'
-            } mb-2`}>
-            Long Break After (cycles)
-          </label>
-          <input
-            type="number"
-            value={settings.longBreakAfter}
-            onChange={(e) => updateSettings({ ...settings, longBreakAfter: parseInt(e.target.value) })}
-            className={`w-full px-4 py-3 border rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-500 ${isDarkMode
-              ? 'bg-gray-700 border-gray-600 text-white'
-              : 'bg-white border-gray-200 text-gray-900'
+        {/* Overlay Note */}
+        {showOverlayNote && (
+          <div className={`mt-4 p-3 ${isDarkMode ? 'bg-blue-900/20 border-blue-700' : 'bg-blue-50 border-blue-200'} border rounded-xl flex items-center gap-3 animate-in slide-in-from-top-2 duration-300`}>
+            <div className={`w-5 h-5 rounded-full ${isDarkMode ? 'bg-blue-500' : 'bg-blue-400'} flex items-center justify-center flex-shrink-0`}>
+              <Timer className="w-3 h-3 text-white" />
+            </div>
+            <div className="flex-1">
+              <p className={`text-sm font-medium ${isDarkMode ? 'text-blue-200' : 'text-blue-800'}`}>
+                Timer settings changed
+              </p>
+              <p className={`text-xs ${isDarkMode ? 'text-blue-300' : 'text-blue-700'}`}>
+                If you have a timer overlay open, close and reopen it to see the changes.
+              </p>
+            </div>
+            <button
+              onClick={() => setShowOverlayNote(false)}
+              className={`w-6 h-6 rounded-full flex items-center justify-center transition-colors ${
+                isDarkMode 
+                  ? 'hover:bg-blue-800 text-blue-400' 
+                  : 'hover:bg-blue-200 text-blue-600'
               }`}
-          />
-        </div>
+            >
+              <X className="w-4 h-4" />
+            </button>
+          </div>
+        )}
       </div>
-    </div>
 
-    {/* Feature Flags Section */}
+      {/* Feature Flags Section */}
     <div className={`${isDarkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'
       } rounded-2xl p-8 border`}>
       <h3 className={`text-2xl font-bold ${isDarkMode ? 'text-white' : 'text-gray-800'
@@ -1219,61 +1509,220 @@ const SettingsContent = ({ settings, updateSettings, isDarkMode, closeAllWithMai
       </div>
     </div>
   </div>
-);
+  );
+};
 
-// Placeholder components for other tabs
-const NotificationsContent = ({ isDarkMode }) => (
-  <div className={`${isDarkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'
-    } rounded-2xl p-8 border`}>
-    <h3 className={`text-2xl font-bold ${isDarkMode ? 'text-white' : 'text-gray-800'
-      } mb-6`}>Notification Settings</h3>
-    <p className={isDarkMode ? 'text-gray-400' : 'text-gray-600'}>
-      Notification preferences will be implemented here.
-    </p>
-  </div>
-);
+// Notifications Content Component
+const NotificationsContent = ({ isDarkMode }) => {
+  const [notificationsEnabled, setNotificationsEnabled] = useState(() => {
+    // Load from localStorage or default to true
+    try {
+      const saved = localStorage.getItem('promodor_notifications_enabled');
+      return saved !== null ? JSON.parse(saved) : true;
+    } catch (error) {
+      console.error('Error loading notification setting:', error);
+      return true;
+    }
+  });
 
-const SoundsContent = ({ isDarkMode }) => (
-  <div className={`${isDarkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'
-    } rounded-2xl p-8 border`}>
-    <h3 className={`text-2xl font-bold ${isDarkMode ? 'text-white' : 'text-gray-800'
-      } mb-6`}>Sound Settings</h3>
-    <p className={isDarkMode ? 'text-gray-400' : 'text-gray-600'}>
-      Audio configuration options will be implemented here.
-    </p>
-  </div>
-);
+  const handleNotificationToggle = async () => {
+    const newValue = !notificationsEnabled;
+    setNotificationsEnabled(newValue);
+    
+    // Save to localStorage
+    localStorage.setItem('promodor_notifications_enabled', JSON.stringify(newValue));
+    
+    // Update IPC setting if available
+    if (window.electronAPI?.updateNotificationSetting) {
+      try {
+        await window.electronAPI.updateNotificationSetting(newValue);
+        console.log('Notification setting updated via IPC:', newValue);
+      } catch (error) {
+        console.error('Error updating notification setting via IPC:', error);
+      }
+    }
+  };
+
+  return (
+    <div className="space-y-6">
+      {/* Notification Settings */}
+      <div className={`${isDarkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'
+        } rounded-2xl p-8 border`}>
+        <h3 className={`text-2xl font-bold ${isDarkMode ? 'text-white' : 'text-gray-800'
+          } mb-6`}>Notification Settings</h3>
+        
+        <div className="space-y-6">
+          <div className="flex items-center justify-between">
+            <div>
+              <div className={`font-medium ${isDarkMode ? 'text-white' : 'text-gray-800'
+                }`}>Enable Notifications</div>
+              <div className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-600'
+                }`}>Show system notifications when timer completes</div>
+            </div>
+            <button 
+              onClick={handleNotificationToggle}
+              className={`w-12 h-6 ${notificationsEnabled ? 'bg-orange-500' : isDarkMode ? 'bg-gray-600' : 'bg-gray-300'
+                } rounded-full relative transition-colors`}
+            >
+              <div className={`w-5 h-5 bg-white rounded-full absolute top-0.5 transition-transform ${
+                notificationsEnabled ? 'translate-x-6' : 'translate-x-0.5'
+              }`}></div>
+            </button>
+          </div>
+          
+          {/* Current Status */}
+          <div className={`${isDarkMode ? 'bg-gray-700' : 'bg-gray-50'} rounded-xl p-4`}>
+            <div className={`text-sm ${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>
+              <strong>Current status:</strong> {notificationsEnabled ? 'Notifications are enabled' : 'Notifications are disabled'}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Sound Settings - Coming Soon */}
+      <div className={`${isDarkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'
+        } rounded-2xl p-8 border`}>
+        <div className="flex items-center gap-4">
+          <div className="w-12 h-12 rounded-xl bg-gray-500 flex items-center justify-center">
+            <Volume2 className="w-6 h-6 text-white" />
+          </div>
+          <div>
+            <h3 className={`text-lg font-semibold ${isDarkMode ? 'text-white' : 'text-gray-800'
+              } mb-1`}>Sound Settings Coming Soon</h3>
+            <p className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-600'
+              }`}>
+              Advanced sound customization features are currently under development. 
+              You'll be able to customize timer sounds, volume, and audio preferences soon!
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
 
 const ShortcutsContent = ({ isDarkMode }) => (
   <div className={`${isDarkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'
     } rounded-2xl p-8 border`}>
     <h3 className={`text-2xl font-bold ${isDarkMode ? 'text-white' : 'text-gray-800'
       } mb-6`}>Keyboard Shortcuts</h3>
-    <div className="space-y-4">
-      <div className={`flex justify-between items-center p-4 ${isDarkMode ? 'bg-gray-700' : 'bg-gray-50'
-        } rounded-xl`}>
-        <span className={isDarkMode ? 'text-gray-300' : 'text-gray-700'}>New Session</span>
-        <kbd className={`px-3 py-1 ${isDarkMode ? 'bg-gray-600 text-gray-300' : 'bg-gray-200 text-gray-700'
-          } rounded text-sm`}>Ctrl+N</kbd>
+    
+    {/* Global Shortcuts Section */}
+    <div className="mb-8">
+      <h4 className={`text-lg font-semibold ${isDarkMode ? 'text-white' : 'text-gray-800'
+        } mb-4`}>Global Shortcuts (Work when app is unfocused)</h4>
+      <div className="space-y-3">
+        <div className={`flex justify-between items-center p-3 ${isDarkMode ? 'bg-gray-700' : 'bg-gray-50'
+          } rounded-xl`}>
+          <span className={isDarkMode ? 'text-gray-300' : 'text-gray-700'}>Start/Pause Timer</span>
+          <kbd className={`px-3 py-1 ${isDarkMode ? 'bg-gray-600 text-gray-300' : 'bg-gray-200 text-gray-700'
+            } rounded text-sm`}>Ctrl+Shift+Space</kbd>
+        </div>
+        <div className={`flex justify-between items-center p-3 ${isDarkMode ? 'bg-gray-700' : 'bg-gray-50'
+          } rounded-xl`}>
+          <span className={isDarkMode ? 'text-gray-300' : 'text-gray-700'}>Reset Timer</span>
+          <kbd className={`px-3 py-1 ${isDarkMode ? 'bg-gray-600 text-gray-300' : 'bg-gray-200 text-gray-700'
+            } rounded text-sm`}>Ctrl+Shift+Z</kbd>
+        </div>
+        <div className={`flex justify-between items-center p-3 ${isDarkMode ? 'bg-gray-700' : 'bg-gray-50'
+          } rounded-xl`}>
+          <span className={isDarkMode ? 'text-gray-300' : 'text-gray-700'}>Global Timer Toggle</span>
+          <kbd className={`px-3 py-1 ${isDarkMode ? 'bg-gray-600 text-gray-300' : 'bg-gray-200 text-gray-700'
+            } rounded text-sm`}>Ctrl+Shift+P</kbd>
+        </div>
+        <div className={`flex justify-between items-center p-3 ${isDarkMode ? 'bg-gray-700' : 'bg-gray-50'
+          } rounded-xl`}>
+          <span className={isDarkMode ? 'text-gray-300' : 'text-gray-700'}>Toggle Timer Overlay</span>
+          <kbd className={`px-3 py-1 ${isDarkMode ? 'bg-gray-600 text-gray-300' : 'bg-gray-200 text-gray-700'
+            } rounded text-sm`}>Ctrl+Shift+O</kbd>
+        </div>
+        <div className={`flex justify-between items-center p-3 ${isDarkMode ? 'bg-gray-700' : 'bg-gray-50'
+          } rounded-xl`}>
+          <span className={isDarkMode ? 'text-gray-300' : 'text-gray-700'}>Toggle Notes Overlay</span>
+          <kbd className={`px-3 py-1 ${isDarkMode ? 'bg-gray-600 text-gray-300' : 'bg-gray-200 text-gray-700'
+            } rounded text-sm`}>Ctrl+Shift+N</kbd>
+        </div>
+        <div className={`flex justify-between items-center p-3 ${isDarkMode ? 'bg-gray-700' : 'bg-gray-50'
+          } rounded-xl`}>
+          <span className={isDarkMode ? 'text-gray-300' : 'text-gray-700'}>Toggle Streak Overlay</span>
+          <kbd className={`px-3 py-1 ${isDarkMode ? 'bg-gray-600 text-gray-300' : 'bg-gray-200 text-gray-700'
+            } rounded text-sm`}>Ctrl+Shift+T</kbd>
+        </div>
+        <div className={`flex justify-between items-center p-3 ${isDarkMode ? 'bg-gray-700' : 'bg-gray-50'
+          } rounded-xl`}>
+          <span className={isDarkMode ? 'text-gray-300' : 'text-gray-700'}>Hide Window</span>
+          <kbd className={`px-3 py-1 ${isDarkMode ? 'bg-gray-600 text-gray-300' : 'bg-gray-200 text-gray-700'
+            } rounded text-sm`}>Ctrl+Shift+H</kbd>
+        </div>
+        <div className={`flex justify-between items-center p-3 ${isDarkMode ? 'bg-gray-700' : 'bg-gray-50'
+          } rounded-xl`}>
+          <span className={isDarkMode ? 'text-gray-300' : 'text-gray-700'}>Show Window</span>
+          <kbd className={`px-3 py-1 ${isDarkMode ? 'bg-gray-600 text-gray-300' : 'bg-gray-200 text-gray-700'
+            } rounded text-sm`}>Ctrl+Shift+S</kbd>
+        </div>
+        <div className={`flex justify-between items-center p-3 ${isDarkMode ? 'bg-gray-700' : 'bg-gray-50'
+          } rounded-xl`}>
+          <span className={isDarkMode ? 'text-gray-300' : 'text-gray-700'}>Toggle Click-through</span>
+          <kbd className={`px-3 py-1 ${isDarkMode ? 'bg-gray-600 text-gray-300' : 'bg-gray-200 text-gray-700'
+            } rounded text-sm`}>Ctrl+Shift+C</kbd>
+        </div>
       </div>
-      <div className={`flex justify-between items-center p-4 ${isDarkMode ? 'bg-gray-700' : 'bg-gray-50'
-        } rounded-xl`}>
-        <span className={isDarkMode ? 'text-gray-300' : 'text-gray-700'}>Toggle Timer Overlay</span>
-        <kbd className={`px-3 py-1 ${isDarkMode ? 'bg-gray-600 text-gray-300' : 'bg-gray-200 text-gray-700'
-          } rounded text-sm`}>Ctrl+Shift+O</kbd>
+    </div>
+
+    {/* Mode Shortcuts Section */}
+    <div className="mb-8">
+      <h4 className={`text-lg font-semibold ${isDarkMode ? 'text-white' : 'text-gray-800'
+        } mb-4`}>Timer Mode Shortcuts</h4>
+      <div className="space-y-3">
+        <div className={`flex justify-between items-center p-3 ${isDarkMode ? 'bg-gray-700' : 'bg-gray-50'
+          } rounded-xl`}>
+          <span className={isDarkMode ? 'text-gray-300' : 'text-gray-700'}>Focus Mode</span>
+          <kbd className={`px-3 py-1 ${isDarkMode ? 'bg-gray-600 text-gray-300' : 'bg-gray-200 text-gray-700'
+            } rounded text-sm`}>Ctrl+Shift+1</kbd>
+        </div>
+        <div className={`flex justify-between items-center p-3 ${isDarkMode ? 'bg-gray-700' : 'bg-gray-50'
+          } rounded-xl`}>
+          <span className={isDarkMode ? 'text-gray-300' : 'text-gray-700'}>Short Break</span>
+          <kbd className={`px-3 py-1 ${isDarkMode ? 'bg-gray-600 text-gray-300' : 'bg-gray-200 text-gray-700'
+            } rounded text-sm`}>Ctrl+Shift+2</kbd>
+        </div>
+        <div className={`flex justify-between items-center p-3 ${isDarkMode ? 'bg-gray-700' : 'bg-gray-50'
+          } rounded-xl`}>
+          <span className={isDarkMode ? 'text-gray-300' : 'text-gray-700'}>Long Break</span>
+          <kbd className={`px-3 py-1 ${isDarkMode ? 'bg-gray-600 text-gray-300' : 'bg-gray-200 text-gray-700'
+            } rounded text-sm`}>Ctrl+Shift+3</kbd>
+        </div>
       </div>
-      <div className={`flex justify-between items-center p-4 ${isDarkMode ? 'bg-gray-700' : 'bg-gray-50'
-        } rounded-xl`}>
-        <span className={isDarkMode ? 'text-gray-300' : 'text-gray-700'}>Toggle Notes Overlay</span>
-        <kbd className={`px-3 py-1 ${isDarkMode ? 'bg-gray-600 text-gray-300' : 'bg-gray-200 text-gray-700'
-          } rounded text-sm`}>Ctrl+Shift+N</kbd>
+    </div>
+
+    {/* Special Features Section */}
+    <div>
+      <h4 className={`text-lg font-semibold ${isDarkMode ? 'text-white' : 'text-gray-800'
+        } mb-4`}>Special Features</h4>
+      <div className="space-y-3">
+        <div className={`flex justify-between items-center p-3 ${isDarkMode ? 'bg-gray-700' : 'bg-gray-50'
+          } rounded-xl`}>
+          <span className={isDarkMode ? 'text-gray-300' : 'text-gray-700'}>Hyper Mode</span>
+          <kbd className={`px-3 py-1 ${isDarkMode ? 'bg-gray-600 text-gray-300' : 'bg-gray-200 text-gray-700'
+            } rounded text-sm`}>Ctrl+Shift+A</kbd>
+        </div>
+        <div className={`flex justify-between items-center p-3 ${isDarkMode ? 'bg-gray-700' : 'bg-gray-50'
+          } rounded-xl`}>
+          <span className={isDarkMode ? 'text-gray-300' : 'text-gray-700'}>Super Hyper Mode</span>
+          <kbd className={`px-3 py-1 ${isDarkMode ? 'bg-gray-600 text-gray-300' : 'bg-gray-200 text-gray-700'
+            } rounded text-sm`}>Ctrl+Shift+X</kbd>
+        </div>
       </div>
-      <div className={`flex justify-between items-center p-4 ${isDarkMode ? 'bg-gray-700' : 'bg-gray-50'
-        } rounded-xl`}>
-        <span className={isDarkMode ? 'text-gray-300' : 'text-gray-700'}>Toggle Streak Overlay</span>
-        <kbd className={`px-3 py-1 ${isDarkMode ? 'bg-gray-600 text-gray-300' : 'bg-gray-200 text-gray-700'
-          } rounded text-sm`}>Ctrl+Shift+T</kbd>
-      </div>
+    </div>
+
+    {/* Note */}
+    <div className={`mt-6 p-4 ${isDarkMode ? 'bg-blue-900/20 border-blue-700' : 'bg-blue-50 border-blue-200'
+      } rounded-xl border`}>
+      <p className={`text-sm ${isDarkMode ? 'text-blue-300' : 'text-blue-700'}`}>
+        <strong>Note:</strong> Global shortcuts work even when the app is not in focus, 
+        making it easy to control your timer from anywhere on your system.
+      </p>
     </div>
   </div>
 );
@@ -1281,9 +1730,28 @@ const ShortcutsContent = ({ isDarkMode }) => (
 // Profile Content Component
 const ProfileContent = ({ isDarkMode }) => (
   <div className="space-y-6">
-    {/* Profile Info */}
+    {/* Development Notice */}
+    <div className={`${isDarkMode ? 'bg-blue-900/20 border-blue-700' : 'bg-blue-50 border-blue-200'
+      } rounded-2xl p-6 border`}>
+      <div className="flex items-center gap-4">
+        <div className="w-12 h-12 rounded-xl bg-blue-500 flex items-center justify-center">
+          <Timer className="w-6 h-6 text-white" />
+        </div>
+        <div>
+          <h3 className={`text-lg font-semibold ${isDarkMode ? 'text-blue-200' : 'text-blue-800'
+            } mb-1`}>Profile Features Coming Soon</h3>
+          <p className={`text-sm ${isDarkMode ? 'text-blue-300' : 'text-blue-700'
+            }`}>
+            Your profile and personalization features are currently under development. 
+            Data is saved locally for now, and full profile functionality will be available soon!
+          </p>
+        </div>
+      </div>
+    </div>
+
+    {/* Profile Info - Coming Soon Preview */}
     <div className={`${isDarkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'
-      } rounded-2xl p-8 border`}>
+      } rounded-2xl p-8 border opacity-60`}>
       <div className="flex items-center gap-6 mb-8">
         <div className="w-20 h-20 rounded-full bg-orange-500 flex items-center justify-center">
           <User className="w-10 h-10 text-white" />

@@ -11,7 +11,9 @@ const NotesInput = ({
   isClickThrough,
   selectedColor,
   setSelectedColor,
-  colors  // Add colors to props
+  colors,
+  itemType,
+  setItemType
 }) => {
   // Add textarea ref
   const textareaRef = useRef(null);
@@ -53,7 +55,7 @@ const NotesInput = ({
           }}
         >
           <Plus size={14} />
-          <span>Add Note</span>
+          <span>Add {itemType === 'task' ? 'Task' : 'Note'}</span>
         </button>
       </div>
     );
@@ -66,7 +68,7 @@ const NotesInput = ({
         value={newNote}
         onChange={(e) => setNewNote(e.target.value)}
         onKeyDown={handleKeyDown} // Changed from handleKeyPress to handleKeyDown
-        placeholder="Type your note... (Press Enter to save, Shift+Enter for new line)"
+        placeholder={`Type your ${itemType}... (Press Enter to save, Shift+Enter for new line)`}
         className="w-full p-2 text-xs rounded-lg resize-none"
         style={{
           background: 'rgba(255, 255, 255, 0.1)',
@@ -79,6 +81,30 @@ const NotesInput = ({
         autoFocus
       />
       
+      {/* Item Type Selection */}
+      <div className="flex items-center space-x-2 mb-2">
+        <button
+          onClick={() => setItemType('note')}
+          className={`px-2 py-1 text-xs rounded transition-all ${
+            itemType === 'note' 
+              ? 'bg-white bg-opacity-20 text-white' 
+              : 'bg-white bg-opacity-10 text-white text-opacity-60 hover:text-opacity-100'
+          }`}
+        >
+          Note
+        </button>
+        <button
+          onClick={() => setItemType('task')}
+          className={`px-2 py-1 text-xs rounded transition-all ${
+            itemType === 'task' 
+              ? 'bg-white bg-opacity-20 text-white' 
+              : 'bg-white bg-opacity-10 text-white text-opacity-60 hover:text-opacity-100'
+          }`}
+        >
+          Task
+        </button>
+      </div>
+
       {/* Color Selection */}
       <div className="flex items-center space-x-2 ">
         {colors.map(({ id, color, label }) => (

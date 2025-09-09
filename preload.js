@@ -53,6 +53,30 @@ contextBridge.exposeInMainWorld('electronAPI', {
             ipcRenderer.removeListener('toggle-super-hyper-mode', callback)
         }
     },
+    onToggleTimer: (callback) => {
+        ipcRenderer.on('toggle-timer', callback)
+
+        // Return cleanup function
+        return () => {
+            ipcRenderer.removeListener('toggle-timer', callback)
+        }
+    },
+    onResetTimer: (callback) => {
+        ipcRenderer.on('reset-timer', callback)
+
+        // Return cleanup function
+        return () => {
+            ipcRenderer.removeListener('reset-timer', callback)
+        }
+    },
+    onSetMode: (callback) => {
+        ipcRenderer.on('set-mode', callback)
+
+        // Return cleanup function
+        return () => {
+            ipcRenderer.removeListener('set-mode', callback)
+        }
+    },
     // Notifications
     showNotification: (options) =>
         ipcRenderer.invoke('show-notification', options),
