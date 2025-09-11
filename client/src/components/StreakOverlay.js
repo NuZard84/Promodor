@@ -1,5 +1,13 @@
 import React, { useEffect, useState } from 'react'
-import { X, Eye, Flame, Calendar, Target, TrendingUp, Shield } from 'lucide-react'
+import {
+    X,
+    Eye,
+    Flame,
+    Calendar,
+    Target,
+    TrendingUp,
+    Shield,
+} from 'lucide-react'
 import {
     ensureRolloverNow,
     getCurrentWeekInfo,
@@ -100,7 +108,7 @@ const StreakOverlay = () => {
     }, [])
 
     return (
-        <div 
+        <div
             id="overlay-streak"
             className="w-max flex overflow-hidden"
             style={{
@@ -195,23 +203,6 @@ const StreakOverlay = () => {
                 </div>
 
                 {/* Frozen Streak Display */}
-                <div className="min-w-20 bg-white/10 justify-center flex flex-col rounded-xl p-2 text-center">
-                    <div className="text-4xl font-bold text-white">
-                        <div className="relative rounded-full">
-                            <Flame
-                                size={22}
-                                className="text-blue-400 fill-blue-300 mx-auto mb-1"
-                            />
-                        </div>
-                        {streakFreezes || 0}
-                    </div>
-                    <div className="text-white/60 text-[10px] leading-tight">
-                        Frozen
-                    </div>
-                    <div className="text-white/60 text-[10px] leading-tight">
-                        Streaks
-                    </div>
-                </div>
 
                 <div className="hidden bg-white/10 rounded-lg p-2 text-center">
                     <Target size={14} className="text-green-500 mx-auto mb-1" />
@@ -236,14 +227,30 @@ const StreakOverlay = () => {
                 </div>
                 <div className="flex flex-col gap-1">
                     <div className=" flex flex-1 flex-col w-full">
-                        <div className="flex justify-between items-center mb-2">
-                            <span className="text-white text-sm font-medium">
-                                Weekly Goal
-                            </span>
-                            <span className="text-white/80 text-sm font-medium">
-                                {weeklyCycleCount}/{WEEKLY_GOAL}
-                            </span>
+                        <div className='flex flex-row gap-1 justify-between items-center mb-2'>
+                            <div className="  justify-center flex flex-col rounded-xl text-center">
+                                <div className="text-sm font-bold text-white flex flex-row">
+                                    <div className="relative rounded-full">
+                                        <Flame
+                                            size={18}
+                                            className="text-blue-500 fill-blue-300 mx-auto mb-1"
+                                            title="Frozen Streaks"
+                                        />
+                                    </div>
+                                    {streakFreezes || 0}
+                                </div>
+                             
+                            </div>
+                            <div className="flex justify-between items-center gap-3">
+                                <span className="text-white text-sm font-medium">
+                                    Weekly Goal
+                                </span>
+                                <span className="text-white/80 text-sm font-medium">
+                                    {weeklyCycleCount}/{WEEKLY_GOAL}
+                                </span>
+                            </div>
                         </div>
+
                         <div className="w-full bg-white/10 rounded-full h-2">
                             <div
                                 className="bg-gradient-to-r from-orange-500 to-red-500 h-2 rounded-full transition-all duration-300"
@@ -260,12 +267,14 @@ const StreakOverlay = () => {
                             ]
                             const isToday = d.isToday
                             const completed = d.completed
-                            
+
                             // Check if this day was protected by a freeze
-                            const wasProtected = d.key && protectionStatus.lastMissed && 
-                                d.key === protectionStatus.lastMissed && 
+                            const wasProtected =
+                                d.key &&
+                                protectionStatus.lastMissed &&
+                                d.key === protectionStatus.lastMissed &&
                                 streakFreezes > 0
-                            
+
                             return (
                                 <div
                                     key={d.key}
