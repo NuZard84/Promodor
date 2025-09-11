@@ -64,15 +64,15 @@
     ],
     "win": {
       "target": "nsis",
-      "icon": "assets/icon.ico"
+      "icon": "assets/favicon.ico"
     },
     "mac": {
       "target": "dmg",
-      "icon": "assets/icon.icns"
+      "icon": "assets/favicon.icns"
     },
     "linux": {
       "target": "AppImage",
-      "icon": "assets/icon.png"
+      "icon": "assets/favicon.png"
     }
   }
 }
