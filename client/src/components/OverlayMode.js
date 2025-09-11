@@ -467,7 +467,7 @@ const OverlayMode = ({ settings = null }) => {
 
     return (
         <div
-            className="overlay-container w-min h-full flex flex-col "
+            className="overlay-container w-min h-min flex flex-col "
             style={{
                 borderRadius: '35px',
                 border: '1px solid rgba(255, 255, 255, 0.21)',
