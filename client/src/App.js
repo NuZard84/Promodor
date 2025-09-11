@@ -7,7 +7,6 @@ import {
   BarChart3,
   CheckSquare,
   Layers,
-  Plus,
   X,
   Minus,
   Square,
@@ -16,7 +15,7 @@ import {
   Sun,
   User
 } from 'lucide-react';
-import { useTimer, useTasks, useNotifier } from './hooks';
+import { useTimer, useNotifier } from './hooks';
 import {
   OverlayMode,
   NotesOverlay,
@@ -50,16 +49,6 @@ const App = () => {
     updateSettings
   } = useTimer(initialSettings);
 
-  const {
-    tasks,
-    newTask,
-    setNewTask,
-    completedTasks,
-    addTask,
-    toggleTask,
-    deleteTask,
-    updateCompletedTasks
-  } = useTasks();
 
   // App state
   const [activeTab, setActiveTab] = useState('overlays');
@@ -84,18 +73,11 @@ const App = () => {
     { id: 'overlays', label: 'Overlays', icon: Layers },
     { id: 'profile', label: 'Profile', icon: User },
     { id: 'settings', label: 'Settings', icon: Settings },
-    { id: 'tasks', label: 'Tasks', icon: CheckSquare },
     { id: 'stats', label: 'Statistics', icon: BarChart3 },
     { id: 'notifications', label: 'Notifications', icon: Bell },
     { id: 'shortcuts', label: 'Shortcuts', icon: Keyboard },
   ];
 
-  // Update completed tasks when timer completes
-  useEffect(() => {
-    if (mode === 'focus' && !isActive && minutes === 0 && seconds === 0) {
-      updateCompletedTasks(completedTasks + 1);
-    }
-  }, [mode, isActive, minutes, seconds, completedTasks, updateCompletedTasks]);
 
   // Load streak data
   useEffect(() => {
@@ -286,22 +268,9 @@ const App = () => {
   // Main content renderer
   const renderMainContent = () => {
     switch (activeTab) {
-      case 'tasks':
-        return <TasksContent
-          tasks={tasks}
-          newTask={newTask}
-          setNewTask={setNewTask}
-          addTask={addTask}
-          toggleTask={toggleTask}
-          deleteTask={deleteTask}
-          completedTasks={completedTasks}
-          isDarkMode={isDarkMode}
-        />;
       case 'stats':
         return <StatsContent
-          completedTasks={completedTasks}
           cycle={cycle}
-          tasks={tasks}
           isDarkMode={isDarkMode}
           currentStreak={currentStreak}
           streakFreezes={streakFreezes}
@@ -693,7 +662,6 @@ const App = () => {
 const getTabDescription = (tab) => {
   const descriptions = {
     overlays: 'Configure overlay windows',
-    tasks: 'Manage your tasks and goals',
     stats: 'Track your progress and statistics',
     profile: 'Manage your profile and preferences',
     settings: 'Timer and app preferences',
@@ -703,115 +671,10 @@ const getTabDescription = (tab) => {
   return descriptions[tab] || '';
 };
 
-// Tasks Content Component
-const TasksContent = ({
-  tasks,
-  newTask,
-  setNewTask,
-  addTask,
-  toggleTask,
-  deleteTask,
-  completedTasks,
-  isDarkMode
-}) => {
-  const activeTasks = tasks.filter(task => !task.completed);
-  const completedTasksList = tasks.filter(task => task.completed);
-
-  return (
-    <div className="space-y-6">
-      {/* Add Task */}
-      <div className={`${isDarkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'
-        } rounded-2xl p-6 border`}>
-        <h3 className={`text-lg font-semibold ${isDarkMode ? 'text-white' : 'text-gray-800'
-          } mb-4`}>Add New Task</h3>
-        <div className="flex gap-3">
-          <input
-            type="text"
-            value={newTask}
-            onChange={(e) => setNewTask(e.target.value)}
-            placeholder="Enter a new task..."
-            className={`flex-1 px-4 py-3 border rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent ${isDarkMode
-              ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-400'
-              : 'bg-white border-gray-200 text-gray-900 placeholder-gray-500'
-              }`}
-            onKeyPress={(e) => e.key === 'Enter' && addTask()}
-          />
-          <button
-            onClick={addTask}
-            className="px-6 py-3 bg-orange-500 hover:bg-orange-600 text-white rounded-xl font-medium transition-colors flex items-center gap-2"
-          >
-            <Plus className="w-4 h-4" />
-            Add Task
-          </button>
-        </div>
-      </div>
-
-      {/* Active Tasks */}
-      {activeTasks.length > 0 && (
-        <div className={`${isDarkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'
-          } rounded-2xl p-6 border`}>
-          <h3 className={`text-lg font-semibold ${isDarkMode ? 'text-white' : 'text-gray-800'
-            } mb-4`}>
-            Active Tasks ({activeTasks.length})
-          </h3>
-          <div className="space-y-3">
-            {activeTasks.map((task) => (
-              <div key={task.id} className={`flex items-center gap-3 p-3 ${isDarkMode ? 'bg-gray-700' : 'bg-gray-50'
-                } rounded-xl`}>
-                <button
-                  onClick={() => toggleTask(task.id)}
-                  className="w-5 h-5 rounded border-2 border-gray-300 hover:border-orange-500 transition-colors"
-                />
-                <span className={`flex-1 ${isDarkMode ? 'text-gray-300' : 'text-gray-700'
-                  }`}>{task.text}</span>
-                <button
-                  onClick={() => deleteTask(task.id)}
-                  className="w-8 h-8 flex items-center justify-center text-gray-400 hover:text-red-500 transition-colors"
-                >
-                  <X className="w-4 h-4" />
-                </button>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {/* Completed Tasks */}
-      {completedTasksList.length > 0 && (
-        <div className={`${isDarkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'
-          } rounded-2xl p-6 border`}>
-          <h3 className={`text-lg font-semibold ${isDarkMode ? 'text-white' : 'text-gray-800'
-            } mb-4`}>
-            Completed Tasks ({completedTasksList.length})
-          </h3>
-          <div className="space-y-3">
-            {completedTasksList.map((task) => (
-              <div key={task.id} className="flex items-center gap-3 p-3 bg-green-50 dark:bg-green-900/20 rounded-xl">
-                <div className="w-5 h-5 rounded bg-green-500 flex items-center justify-center">
-                  <CheckSquare className="w-3 h-3 text-white" />
-                </div>
-                <span className={`flex-1 line-through ${isDarkMode ? 'text-gray-400' : 'text-gray-600'
-                  }`}>{task.text}</span>
-                <button
-                  onClick={() => deleteTask(task.id)}
-                  className="w-8 h-8 flex items-center justify-center text-gray-400 hover:text-red-500 transition-colors"
-                >
-                  <X className="w-4 h-4" />
-                </button>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-    </div>
-  );
-};
 
 // Stats Content Component
 const StatsContent = ({ 
-  completedTasks, 
   cycle, 
-  tasks, 
   isDarkMode, 
   currentStreak, 
   streakFreezes, 
@@ -823,7 +686,6 @@ const StatsContent = ({
   onAddMultipleFreezes,
   onSimulateConsecutiveDays
 }) => {
-  const completedTasksList = tasks.filter(task => task.completed);
   
   // Check if we're in development mode and Electron is available
   const isDevelopmentMode = process.env.NODE_ENV === 'development' || 
@@ -876,7 +738,7 @@ const StatsContent = ({
             <div>
               <div className={`text-2xl font-bold ${isDarkMode ? 'text-white' : 'text-gray-800'
                 }`}>
-                {completedTasks}
+                0
               </div>
               <div className={isDarkMode ? 'text-gray-400' : 'text-gray-500'}>
                 Completed Sessions
@@ -894,7 +756,7 @@ const StatsContent = ({
             <div>
               <div className={`text-2xl font-bold ${isDarkMode ? 'text-white' : 'text-gray-800'
                 }`}>
-                {completedTasksList.length}
+                0
               </div>
               <div className={isDarkMode ? 'text-gray-400' : 'text-gray-500'}>
                 Tasks Completed
