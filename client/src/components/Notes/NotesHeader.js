@@ -18,7 +18,7 @@ const NotesHeader = ({
                 cursor: isClickThrough ? 'default' : 'move',
             }}
         >
-            <h2 className="text-white text-sm font-medium">Quick Notes</h2>
+            <h2 className="text-white text-sm font-medium">Quick Tasks</h2>
 
             <div className="flex space-x-2">
                 <button

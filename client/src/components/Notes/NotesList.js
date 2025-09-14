@@ -35,7 +35,7 @@ const NotesList = ({
     if (notes.length === 0) {
         return (
             <div className="Bricolage_Grotesque h-full text-center text-white text-opacity-40 text-xs mt-8">
-                No items yet
+                No tasks yet
             </div>
         )
     }

@@ -7,7 +7,7 @@ const useUnifiedItems = () => {
   const [editingText, setEditingText] = useState('');
   const [showInput, setShowInput] = useState(false);
   const [selectedColor, setSelectedColor] = useState('#FF6B47');
-  const [itemType, setItemType] = useState('note'); // 'note' or 'task'
+  const [showConfetti, setShowConfetti] = useState(false);
 
   const colors = [
     { id: 'high', color: '#FF6B47', label: 'High Priority' },
@@ -16,48 +16,40 @@ const useUnifiedItems = () => {
     { id: 'neutral', color: '#8F9DAF', label: 'No Priority' }
   ];
 
-  // Load items from localStorage on mount
+  // Load tasks from localStorage on mount
   useEffect(() => {
-    const savedNotes = localStorage.getItem('overlay-notes');
     const savedTasks = localStorage.getItem('promodor_tasks');
-    
-    const notes = savedNotes ? JSON.parse(savedNotes) : [];
     const tasks = savedTasks ? JSON.parse(savedTasks) : [];
     
-    // Combine notes and tasks into unified items
-    const unifiedItems = [
-      ...notes.map(note => ({ ...note, type: 'note' })),
-      ...tasks.map(task => ({ ...task, type: 'task', color: '#FF6B47' })) // Default color for tasks
-    ].sort((a, b) => new Date(b.createdAt || b.id) - new Date(a.createdAt || a.id));
+    // Only load tasks, add default color if not present
+    const tasksWithColor = tasks.map(task => ({ 
+      ...task, 
+      type: 'task', 
+      color: task.color || '#FF6B47' 
+    }));
     
-    setItems(unifiedItems);
+    setItems(tasksWithColor.sort((a, b) => new Date(b.createdAt || b.id) - new Date(a.createdAt || a.id)));
   }, []);
 
-  // Save items to localStorage whenever items change
+  // Save tasks to localStorage whenever items change
   useEffect(() => {
-    const notes = items.filter(item => item.type === 'note');
-    const tasks = items.filter(item => item.type === 'task');
-    
-    localStorage.setItem('overlay-notes', JSON.stringify(notes));
-    localStorage.setItem('promodor_tasks', JSON.stringify(tasks));
+    localStorage.setItem('promodor_tasks', JSON.stringify(items));
   }, [items]);
 
   // Listen for storage changes from other tabs/windows
   useEffect(() => {
     const handleStorageChange = (e) => {
-      if (e.key === 'overlay-notes' || e.key === 'promodor_tasks') {
-        const savedNotes = localStorage.getItem('overlay-notes');
+      if (e.key === 'promodor_tasks') {
         const savedTasks = localStorage.getItem('promodor_tasks');
-        
-        const notes = savedNotes ? JSON.parse(savedNotes) : [];
         const tasks = savedTasks ? JSON.parse(savedTasks) : [];
         
-        const unifiedItems = [
-          ...notes.map(note => ({ ...note, type: 'note' })),
-          ...tasks.map(task => ({ ...task, type: 'task', color: '#FF6B47' }))
-        ].sort((a, b) => new Date(b.createdAt || b.id) - new Date(a.createdAt || a.id));
+        const tasksWithColor = tasks.map(task => ({ 
+          ...task, 
+          type: 'task', 
+          color: task.color || '#FF6B47' 
+        }));
         
-        setItems(unifiedItems);
+        setItems(tasksWithColor.sort((a, b) => new Date(b.createdAt || b.id) - new Date(a.createdAt || a.id)));
       }
     };
 
@@ -71,8 +63,8 @@ const useUnifiedItems = () => {
         id: Date.now(),
         text: newItem.trim(),
         color: selectedColor,
-        type: itemType,
-        completed: itemType === 'task' ? false : undefined,
+        type: 'task',
+        completed: false,
         createdAt: new Date().toISOString()
       };
       setItems(prev => [item, ...prev]);
@@ -80,7 +72,7 @@ const useUnifiedItems = () => {
       setShowInput(false);
       setSelectedColor(colors[0].color);
     }
-  }, [newItem, selectedColor, itemType]);
+  }, [newItem, selectedColor]);
 
   const deleteItem = useCallback((id) => {
     setItems(prev => prev.filter(item => item.id !== id));
@@ -91,11 +83,25 @@ const useUnifiedItems = () => {
   }, []);
 
   const toggleTask = useCallback((id) => {
-    setItems(prev => prev.map(item => 
-      item.id === id && item.type === 'task'
-        ? { ...item, completed: !item.completed }
-        : item
-    ));
+    setItems(prev => {
+      const updatedItems = prev.map(item => {
+        if (item.id === id && item.type === 'task') {
+          const wasCompleted = item.completed;
+          const newCompleted = !item.completed;
+          
+          // Show confetti when task is completed (not when uncompleted)
+          if (!wasCompleted && newCompleted) {
+            setShowConfetti(true);
+            // Hide confetti after 3 seconds
+            setTimeout(() => setShowConfetti(false), 3000);
+          }
+          
+          return { ...item, completed: newCompleted };
+        }
+        return item;
+      });
+      return updatedItems;
+    });
   }, []);
 
   const startEditing = useCallback((item) => {
@@ -138,14 +144,12 @@ const useUnifiedItems = () => {
     }
   }, [editingId, saveEdit, addItem, cancelEdit]);
 
-  // Filter items by type
-  const notes = items.filter(item => item.type === 'note');
-  const tasks = items.filter(item => item.type === 'task');
+  // All items are tasks now
+  const tasks = items;
   const completedTasks = tasks.filter(task => task.completed).length;
 
   return {
     items,
-    notes,
     tasks,
     completedTasks,
     newItem,
@@ -157,8 +161,6 @@ const useUnifiedItems = () => {
     setShowInput,
     selectedColor,
     setSelectedColor,
-    itemType,
-    setItemType,
     colors,
     addItem,
     startEditing,
@@ -167,7 +169,9 @@ const useUnifiedItems = () => {
     deleteItem,
     deleteAllItems,
     toggleTask,
-    handleKeyPress
+    handleKeyPress,
+    showConfetti,
+    setShowConfetti
   };
 };
 

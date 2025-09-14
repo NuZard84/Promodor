@@ -2,6 +2,7 @@ import React, { useState } from 'react'
 import { useUnifiedItems, useOverlay } from '../hooks'
 import { NotesHeader, NotesInput, NotesList } from './Notes'
 import FilterButton from './FilterButton/FilterButton'
+import Confetti from 'react-confetti'
 
 import PriorityCounter from './Notes/NotesCount'
 import DeleteAllNotesComponent from './DeleteAllNotes/DeleteAllNotes'
@@ -11,7 +12,6 @@ const NotesOverlay = () => {
 
     const {
         items,
-        notes,
         tasks,
         completedTasks,
         newItem,
@@ -23,8 +23,6 @@ const NotesOverlay = () => {
         setShowInput,
         selectedColor,
         setSelectedColor,
-        itemType,
-        setItemType,
         colors,
         addItem,
         startEditing,
@@ -34,6 +32,7 @@ const NotesOverlay = () => {
         deleteAllItems,
         toggleTask,
         handleKeyPress,
+        showConfetti,
     } = useUnifiedItems()
 
     const { isClickThrough, toggleClickThrough, closeOverlay, openMainWindow } =
@@ -41,7 +40,7 @@ const NotesOverlay = () => {
 
     return (
         <div
-            className="notes-overlay-container w-max flex flex-col "
+            className="notes-overlay-container w-max flex flex-col relative"
             style={{
                 height: '80vh', // Changed from h-88 to explicit height
                 borderRadius: '20px',
@@ -52,6 +51,24 @@ const NotesOverlay = () => {
                 background: 'rgba(0, 0, 0, 0.5)',
             }}
         >
+            {/* Confetti Animation */}
+            {showConfetti && (
+                <Confetti
+                    width={window.innerWidth * 0.85}
+                    height={window.innerHeight * 0.75}
+                    recycle={false}
+                    numberOfPieces={150}
+                    gravity={0.5}
+                    colors={['#FF6B47', '#FFB443', '#4ECDC4', '#8F9DAF', '#FFD700', '#FF69B4', '#00CED1']}
+                    style={{
+                        position: 'fixed',
+                        top: 0,
+                        left: 0,
+                        zIndex: 9999,
+                        pointerEvents: 'none'
+                    }}
+                />
+            )}
             {/* Header */}
 
             <NotesHeader
@@ -75,9 +92,9 @@ const NotesOverlay = () => {
                 }
             />
 
-            {/* Delete All Notes Button */}
+            {/* Delete All Tasks Button */}
 
-            {/* Add Note Input */}
+            {/* Add Task Input */}
             <div className="">
                 <NotesInput
                     showInput={showInput}
@@ -90,12 +107,10 @@ const NotesOverlay = () => {
                     selectedColor={selectedColor}
                     setSelectedColor={setSelectedColor}
                     colors={colors}
-                    itemType={itemType}
-                    setItemType={setItemType}
                 />
             </div>
 
-            {/* Notes List */}
+            {/* Tasks List */}
             <NotesList
                 notes={items}
                 editingId={editingId}
